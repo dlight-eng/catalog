@@ -510,7 +510,16 @@ let view='table', page=1;
 // ── UTILS ────────────────────────────────────────────────────
 const esc  = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const isUrl = v => /^https?:\/\//i.test(v);
-const isImg = v => /\.(jpg|jpeg|png|gif|webp|svg)/i.test(v)||/drive\.google|googleusercontent|lh\d\.google/i.test(v);
+const isImg = v => /\.(jpg|jpeg|png|gif|webp|svg)/i.test(v)||/drive\.google|googleusercontent|lh\d\.google|\/file\/d\//i.test(v);
+
+// Конвертує Google Drive /file/d/ID/view → /uc?export=view&id=ID
+function driveImgUrl(url) {
+  if (!url) return '';
+  if (/drive\.google\.com\/uc/.test(url)) return url;
+  const m = url.match(/\/file\/d\/([^\/\?]+)/);
+  if (m) return 'https://drive.google.com/uc?export=view&id=' + m[1];
+  return url;
+}
 
 function toast(msg,ms=2500){
   const el=document.getElementById('toast');
@@ -656,7 +665,7 @@ function renderGrid(pr){
   g.innerHTML='';
   pr.forEach(row=>{
     const card=document.createElement('div'); card.className='card'; card.onclick=()=>openMo(row);
-    const photos=allImgCols.map(c=>row[c]).filter(v=>v&&isImg(v));
+    const photos=allImgCols.map(c=>driveImgUrl(row[c])).filter(v=>v&&isImg(v));
     const src=photos[0]||'';
     const imgH=src
       ?`<div class="card-img"><img src="${esc(src)}" loading="lazy" onerror="this.parentElement.innerHTML='📦'">${photos.length>1?`<div class="card-img-count">📷 ${photos.length}</div>`:''}</div>`
@@ -685,7 +694,7 @@ let moPhotos=[], moPhotoIdx=0;
 
 function openMo(row){
   const allImgCols=apiImageColumns.length>0?apiImageColumns:(imgCol?[imgCol]:[]);
-  moPhotos=allImgCols.map(c=>row[c]).filter(v=>v&&isImg(v));
+  moPhotos=allImgCols.map(c=>driveImgUrl(row[c])).filter(v=>v&&isImg(v));
   moPhotoIdx=0;
 
   const catC=selF[0]?.col;
