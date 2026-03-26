@@ -213,6 +213,9 @@ tbody tr{cursor:pointer}
 }
 .mcl:hover{color:#ef4444}
 .m-img{width:100%;max-height:240px;object-fit:contain;background:#f5f8ff}
+.m-gallery{display:flex;gap:.4rem;padding:.75rem 1.1rem .3rem;flex-wrap:wrap;background:#f5f8ff}
+.m-gallery img{height:110px;width:auto;max-width:180px;object-fit:cover;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:border-color .15s}
+.m-gallery img:hover,.m-gallery img.active{border-color:var(--accent)}
 .m-fields{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;padding:.8rem 1.1rem 1rem}
 .mf{background:#f8fafc;border:1px solid #eef2f7;border-radius:5px;padding:.42rem .6rem}
 .mf-k{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.12rem}
@@ -308,7 +311,7 @@ tbody tr{cursor:pointer}
 // ══════════════════════════════════════════════════════════════
 //  ⚙️  КОНФІГУРАЦІЯ — замінити після розгортання Apps Script
 // ══════════════════════════════════════════════════════════════
-const API_URL = 'https://script.google.com/macros/s/AKfycbyu4m_fSV62lqdnkQ8j6iuHq8mpOR8YOgXqA8v-AGFLMV0GwRDMiOI3jly3OSW2DhcUMQ/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwuMI8G60osTkILi1vSPFYzjPDXK3QwkLx7tufPmlu40jDtcKjFwmfaUMEzRmhVqOYL8g/exec';
 //  Вставте сюди URL вашого веб-додатку Apps Script
 //  Приклад: 'https://script.google.com/macros/s/AKfycb.../exec'
 
@@ -320,6 +323,7 @@ const MAX_SEL_COLS   = 14;
 const MAX_TXT_COLS   = 6;
 
 let allRows=[], headers=[];
+let apiImageColumns=[];
 let selF=[], txtF=[];
 let imgCol=null, nameCol=null;
 let selV={}, txtV={};
@@ -339,19 +343,26 @@ function toast(msg, ms=2500){
 
 // ── DETECT COLUMNS ───────────────────────────────────────────
 function detectCols(){
-  imgCol = headers.find(h=>/фото|photo|image|img|зображ|картинк/i.test(h)||allRows.slice(0,5).some(r=>isImg(r[h])))||null;
-  nameCol = headers.find(h=>/назва|найменування|name|товар|продукт|модель/i.test(h))||headers.find(h=>h!==imgCol)||headers[0];
+  // imgCol — перша колонка з фото (з API або по ключовому слову)
+  if(apiImageColumns && apiImageColumns.length>0){
+    imgCol = apiImageColumns[0];
+  } else {
+    imgCol = headers.find(h=>/фото|photo|image|img|зображ|картинк/i.test(h)||allRows.slice(0,5).some(r=>isImg(r[h])))||null;
+  }
+  nameCol = headers.find(h=>/назва|найменування|name|товар|продукт|модель/i.test(h))||headers.find(h=>h!==imgCol&&(!apiImageColumns||!apiImageColumns.includes(h)))||headers[0];
+
+  const allImgCols = new Set(apiImageColumns || (imgCol ? [imgCol] : []));
 
   const uniq={};
   headers.forEach(h=>{ uniq[h]=new Set(allRows.map(r=>r[h]).filter(Boolean)).size; });
 
   const selCand = headers
-    .filter(h=>h!==imgCol && uniq[h]>=2 && uniq[h]<=MAX_SEL_UNIQ)
+    .filter(h=>!allImgCols.has(h) && uniq[h]>=2 && uniq[h]<=MAX_SEL_UNIQ)
     .sort((a,b)=>uniq[a]-uniq[b]).slice(0,MAX_SEL_COLS);
   selF = selCand.map(col=>({col}));
 
   const used=new Set(selCand);
-  const txtCand = headers.filter(h=>h!==imgCol&&!used.has(h)&&uniq[h]>=2).slice(0,MAX_TXT_COLS);
+  const txtCand = headers.filter(h=>!allImgCols.has(h)&&!used.has(h)&&uniq[h]>=2).slice(0,MAX_TXT_COLS);
   txtF = txtCand.map(col=>({col}));
 
   selF.forEach(f=>selV[f.col]='');
@@ -453,12 +464,15 @@ function renderTable(pr){
 function renderGrid(pr){
   const g=document.getElementById('cards');
   if(!pr.length){ g.innerHTML='<div class="st" style="grid-column:1/-1">🔍<div>Нічого не знайдено</div></div>'; return; }
-  const catC=selF[0]?.col, subC=headers.find(h=>h!==imgCol&&h!==nameCol&&h!==catC)||null;
+  const allImgCols = apiImageColumns.length>0 ? apiImageColumns : (imgCol?[imgCol]:[]);
+  const catC=selF[0]?.col;
+  const subC=headers.find(h=>!allImgCols.includes(h)&&h!==nameCol&&h!==catC)||null;
   g.innerHTML='';
   pr.forEach(row=>{
     const card=document.createElement('div'); card.className='card'; card.onclick=()=>openMo(row);
-    const src=imgCol?row[imgCol]:'';
-    const imgH=(src&&isImg(src))?`<div class="card-img"><img src="${esc(src)}" loading="lazy" onerror="this.parentElement.innerHTML='📦'"></div>`:`<div class="card-img">📦</div>`;
+    // беремо перше непорожнє фото
+    const src = allImgCols.map(c=>row[c]).find(v=>v&&isImg(v)) || '';
+    const imgH=(src)?`<div class="card-img"><img src="${esc(src)}" loading="lazy" onerror="this.parentElement.innerHTML='📦'"></div>`:`<div class="card-img">📦</div>`;
     const cat=catC&&row[catC]?`<div class="card-cat">${esc(row[catC])}</div>`:'';
     const sub=subC&&row[subC]?`<div class="card-sub">${esc(row[subC])}</div>`:'';
     card.innerHTML=imgH+`<div class="card-body">${cat}<div class="card-name">${esc(row[nameCol]??'—')}</div>${sub}</div>`;
@@ -480,11 +494,26 @@ function goPage(p){ page=p; render(); window.scrollTo({top:0,behavior:'smooth'})
 // ── MODAL ────────────────────────────────────────────────────
 function openMo(row){
   document.getElementById('m-title').textContent=row[nameCol]??'—';
-  const src=imgCol?row[imgCol]:'';
-  let h=''; if(src&&isImg(src))h+=`<img class="m-img" src="${esc(src)}" onerror="this.style.display='none'">`;
+  const allImgCols = apiImageColumns.length>0 ? apiImageColumns : (imgCol?[imgCol]:[]);
+  const photos = allImgCols.map(c=>row[c]).filter(v=>v&&isImg(v));
+
+  let h='';
+  if(photos.length===1){
+    h+=`<img class="m-img" src="${esc(photos[0])}" onerror="this.style.display='none'">`;
+  } else if(photos.length>1){
+    h+=`<div class="m-gallery">`+photos.map(src=>`<img src="${esc(src)}" loading="lazy" onerror="this.style.display='none'" onclick="this.closest('.m-gallery').querySelectorAll('img').forEach(i=>i.classList.remove('active'));this.classList.add('active')">`).join('')+`</div>`;
+  }
+
   h+='<div class="m-fields">';
-  headers.forEach(k=>{ if(k===imgCol||!row[k])return; const v=row[k]; const vh=isUrl(v)?`<a href="${esc(v)}" target="_blank">${esc(v.length>50?v.slice(0,50)+'…':v)}</a>`:esc(v); h+=`<div class="mf"><div class="mf-k">${esc(k)}</div><div class="mf-v">${vh}</div></div>`; });
-  h+='</div>'; document.getElementById('m-body').innerHTML=h; document.getElementById('mo').classList.add('open');
+  headers.forEach(k=>{
+    if(allImgCols.includes(k)||!row[k])return;
+    const v=row[k];
+    const vh=isUrl(v)?`<a href="${esc(v)}" target="_blank">${esc(v.length>50?v.slice(0,50)+'…':v)}</a>`:esc(v);
+    h+=`<div class="mf"><div class="mf-k">${esc(k)}</div><div class="mf-v">${vh}</div></div>`;
+  });
+  h+='</div>';
+  document.getElementById('m-body').innerHTML=h;
+  document.getElementById('mo').classList.add('open');
 }
 function closeMo(){ document.getElementById('mo').classList.remove('open'); }
 document.getElementById('mo').onclick=e=>{ if(e.target.id==='mo')closeMo(); };
@@ -526,8 +555,9 @@ async function init(){
 
     if(data.error) throw new Error(data.error);
 
-    headers  = data.headers;
-    allRows  = data.rows;
+    headers         = data.headers;
+    allRows         = data.rows;
+    apiImageColumns = data.imageColumns || [];
 
     document.getElementById('total-count').textContent = data.total;
     if(data.updatedAt){
