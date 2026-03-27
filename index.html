@@ -381,6 +381,18 @@ td a:hover{text-decoration:underline}
   background:var(--surface3);display:block;
 }
 
+
+.mf-copy-desc{
+  display:inline-flex;align-items:center;gap:.25rem;
+  background:var(--accentbg);border:1px solid rgba(37,99,235,.2);
+  color:var(--accent);border-radius:4px;
+  padding:.15rem .45rem;font-size:.65rem;font-weight:700;
+  cursor:pointer;font-family:inherit;margin-left:.4rem;
+  transition:all .15s;vertical-align:middle;
+}
+.mf-copy-desc:hover{background:var(--accentbg2)}
+.mf-copy-desc.ok{background:rgba(22,163,74,.08);border-color:rgba(22,163,74,.2);color:var(--green)}
+
 /* ── LIGHTBOX ── */
 .lb{
   display:none;position:fixed;inset:0;z-index:500;
@@ -979,8 +991,13 @@ function openMo(row){
         :v.includes('drive.google')?'Відкрити в Drive':'Відкрити посилання';
       vh=`<a href="${esc(v)}" target="_blank">🔗 ${label}</a>`;
     } else {
+      const isDesc=/опис|характеристик|переваги/i.test(k);
       const copyable=kdCol&&k===kdCol;
-      vh=esc(v)+(copyable?`<button class="mf-copy" onclick="copyField(this,'${esc(v)}')">⎘</button>`:'');
+      if(isDesc){
+        vh=esc(v)+`<button class="mf-copy mf-copy-desc" onclick="copyField(this,'${esc(v)}')" title="Копіювати опис">⎘ Копіювати</button>`;
+      } else {
+        vh=esc(v)+(copyable?`<button class="mf-copy" onclick="copyField(this,'${esc(v)}')" title="Копіювати">⎘</button>`:'');
+      }
     }
     fields+=`<div class="mf${isLong?' full':''}"><div class="mf-k">${esc(k)}</div><div class="mf-v">${vh}</div></div>`;
   });
