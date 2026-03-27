@@ -380,6 +380,68 @@ td a:hover{text-decoration:underline}
   opacity:0;transition:opacity .25s;pointer-events:none;z-index:300;
 }
 .toast.show{opacity:1}
+
+/* ── INFO BANNER (рівні кастомності) ── */
+.info-banner{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  font-size:.78rem;
+}
+.info-banner-toggle{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.55rem 1.5rem;cursor:pointer;user-select:none;
+  transition:background .12s;
+}
+.info-banner-toggle:hover{background:var(--surface2)}
+.info-banner-toggle-left{display:flex;align-items:center;gap:.55rem}
+.info-banner-badge{
+  background:var(--accentbg);color:var(--accent);
+  border:1px solid rgba(37,99,235,.2);border-radius:4px;
+  padding:.1rem .45rem;font-size:.65rem;font-weight:700;letter-spacing:.03em;
+}
+.info-banner-title{font-weight:700;color:var(--text);font-size:.78rem}
+.info-banner-hint{font-size:.68rem;color:var(--text3)}
+.info-banner-arr{
+  color:var(--text3);font-size:.8rem;transition:transform .2s;flex-shrink:0;
+}
+.info-banner.open .info-banner-arr{transform:rotate(180deg)}
+.info-banner-body{
+  display:none;padding:.75rem 1.5rem 1rem;
+  border-top:1px solid var(--border);
+  background:var(--surface2);
+}
+.info-banner.open .info-banner-body{display:block}
+.levels-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:.65rem;
+}
+.level-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius2);padding:.7rem .85rem;
+  border-left:3px solid var(--accent);
+}
+.level-card:nth-child(1){border-left-color:#22c55e}
+.level-card:nth-child(2){border-left-color:#3b82f6}
+.level-card:nth-child(3){border-left-color:#f59e0b}
+.level-card:nth-child(4){border-left-color:#ef4444}
+.level-card:nth-child(5){border-left-color:#8b5cf6}
+.level-title{font-weight:800;font-size:.8rem;color:var(--text);margin-bottom:.3rem}
+.level-desc{font-size:.72rem;color:var(--text2);line-height:1.5;margin-bottom:.4rem}
+.level-options{font-size:.7rem;color:var(--text2);margin-bottom:.4rem;padding-left:.8rem}
+.level-options li{margin-bottom:.1rem}
+.level-timing{
+  display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.3rem;
+}
+.level-timing span{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:4px;padding:.1rem .4rem;
+  font-size:.65rem;font-weight:700;color:var(--text3);
+}
+.info-warning{
+  margin-top:.65rem;padding:.5rem .75rem;
+  background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);
+  border-radius:var(--radius);font-size:.72rem;color:#b91c1c;font-weight:600;
+}
 </style>
 </head>
 <body>
@@ -402,6 +464,81 @@ td a:hover{text-decoration:underline}
     </div>
   </div>
 </header>
+
+
+<!-- INFO BANNER: рівні кастомності -->
+<div class="info-banner" id="info-banner">
+  <div class="info-banner-toggle" onclick="toggleBanner()">
+    <div class="info-banner-toggle-left">
+      <div class="info-banner-badge">ℹ️ Довідка</div>
+      <div class="info-banner-title">Рівні кастомності продукції</div>
+      <div class="info-banner-hint">Натисніть щоб розгорнути</div>
+    </div>
+    <div class="info-banner-arr">▼</div>
+  </div>
+  <div class="info-banner-body">
+    <div class="levels-grid">
+      <div class="level-card">
+        <div class="level-title">1-й рівень кастомності</div>
+        <div class="level-desc">До цієї категорії автоматично потрапляють Замовлення, які мають 3Д-модель, повний комплект РКД, ресурсну специфікацію та мінімум 1 раз вже вироблялось. Дає можливість вибору лише кольору продукції. (За потребою клієнта)</div>
+        <div class="level-timing">
+          <span>ВГК — 0 днів</span>
+          <span>ВГТ — 1 день</span>
+        </div>
+      </div>
+      <div class="level-card">
+        <div class="level-title">2-й рівень кастомності</div>
+        <div class="level-desc">Мінімальні зміни та доповнення вироблених раніше Продуктів, або створення Продуктів з кількістю креслень до 30 од. Дає можливість вибору: 1 опція з категорії 1 + 1 опція на вибір:</div>
+        <ul class="level-options">
+          <li>надставні борти</li>
+          <li>клапан задній</li>
+          <li>тент з дугами тенту</li>
+          <li>варіант з шиберною заслінкою</li>
+          <li>задній трап з драбиною на клапані</li>
+          <li>бокові відкидні сходинки</li>
+        </ul>
+        <div class="level-timing">
+          <span>ВГК — 5 днів</span>
+          <span>ВГТ — 5 днів</span>
+        </div>
+      </div>
+      <div class="level-card">
+        <div class="level-title">3-й рівень кастомності</div>
+        <div class="level-desc">Більш кардинальні зміни та доповнення вироблених раніше Продуктів. Дає змогу додати до стандарту на вибір:</div>
+        <ul class="level-options">
+          <li>а) 3 опції (2 нових + 1 з категорії №1): надставні борти, клапан задній, тент, варіант вивантаження, шиберна заслінка, трап, сходинки</li>
+          <li>б) розробка надрамника під нове шасі</li>
+        </ul>
+        <div class="level-timing">
+          <span>ВГК — 8 днів</span>
+          <span>ВГТ — 6 днів</span>
+        </div>
+      </div>
+      <div class="level-card">
+        <div class="level-title">4-й рівень кастомності</div>
+        <div class="level-desc">Замовлення з наступними характеристиками:</div>
+        <ul class="level-options">
+          <li>Нове шасі з новими вимогами до комплектації</li>
+          <li>Нова варіація комплектації кузова</li>
+          <li>Нові габаритні розміри кузова/платформи/надстройки</li>
+        </ul>
+        <div class="level-timing">
+          <span>ВГК — 15 днів</span>
+          <span>ВГТ — 7 днів</span>
+        </div>
+      </div>
+      <div class="level-card">
+        <div class="level-title">5-й рівень кастомності</div>
+        <div class="level-desc">Замовлення в рамках проектів відділу дослідного виробництва (проекти «5 продуктів» / «перспективні проекти»).</div>
+        <div class="level-timing">
+          <span>ВГК — 250 днів</span>
+          <span>ВГТ — 7 днів</span>
+        </div>
+      </div>
+    </div>
+    <div class="info-warning">⚠️ Присвоєнням категорії Замовленню/Виробу займаються тільки конструктори ВГК в рамках поставленої на них Задачі на Загальний вид по шаблону в Бітрікс24.</div>
+  </div>
+</div>
 
 <!-- GLOBAL SEARCH -->
 <div class="gs-wrap">
@@ -823,6 +960,11 @@ function setView(v){
 }
 
 // ── INIT ──
+
+function toggleBanner(){
+  document.getElementById('info-banner').classList.toggle('open');
+}
+
 async function init(){
   try{
     toast('⏳ Завантаження…',15000);
