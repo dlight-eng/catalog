@@ -366,6 +366,20 @@ td a:hover{text-decoration:underline}
 .mf-copy:hover{color:var(--accent);background:var(--accentbg)}
 .mf-copy.ok{color:var(--green)}
 
+
+/* ── VIDEO ── */
+.m-video-wrap{
+  padding:.5rem;border-top:1px solid var(--border);background:var(--surface2);flex-shrink:0;
+}
+.m-video-lbl{
+  font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--text3);margin-bottom:.35rem;padding:0 .1rem;
+  display:flex;align-items:center;gap:.3rem;
+}
+.m-video-frame{
+  width:100%;aspect-ratio:16/9;border-radius:6px;border:none;
+  background:var(--surface3);display:block;
+}
 /* ── STATES ── */
 .st{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 2rem;gap:.65rem;color:var(--text3);text-align:center}
 .spin{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite}
@@ -614,6 +628,13 @@ let selV={}, gsQ='', sortCol=null, sortDir=1, view='table', page=1;
 const esc  = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const isUrl = v => /^https?:\/\//i.test(v);
 const isImg = v => /\.(jpg|jpeg|png|gif|webp|svg)/i.test(v)||/drive\.google|googleusercontent|lh\d\.google|\/file\/d\//i.test(v);
+
+
+function getYoutubeId(url){
+  if(!url) return '';
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
+  return m ? m[1] : '';
+}
 
 function driveImgUrl(url){
   if(!url) return '';
@@ -866,7 +887,16 @@ function openMo(row){
   // Photos (left)
   let photosHtml='';
   if(moPhotos.length===0){
-    photosHtml=`<div class="m-photos"><div class="m-main-img" style="flex:1">📦</div></div>`;
+    const videoCol0 = headers.find(h => /відео|video/i.test(h));
+    const videoUrl0 = videoCol0 ? row[videoCol0] : '';
+    const ytId0 = getYoutubeId(videoUrl0);
+    const videoHtml0 = ytId0
+      ? `<div class="m-video-wrap">
+           <div class="m-video-lbl">▶ Відеоогляд</div>
+           <iframe class="m-video-frame" src="https://www.youtube.com/embed/${ytId0}" allowfullscreen loading="lazy"></iframe>
+         </div>`
+      : '';
+    photosHtml=`<div class="m-photos"><div class="m-main-img" style="flex:1">📦</div>${videoHtml0}</div>`;
   } else {
     const nav=moPhotos.length>1
       ?`<div class="m-photo-nav">
@@ -876,9 +906,20 @@ function openMo(row){
         </div>`:'';
     const thumbs=moPhotos.length>1
       ?`<div class="m-thumbs">${moPhotos.map((s,i)=>`<div class="m-thumb ${i===0?'active':''}" onclick="switchPhoto(${i})"><img src="${esc(s)}" onerror="this.style.display='none'"></div>`).join('')}</div>`:'';
+    // Відео
+    const videoCol = headers.find(h => /відео|video/i.test(h));
+    const videoUrl = videoCol ? row[videoCol] : '';
+    const ytId = getYoutubeId(videoUrl);
+    const videoHtml = ytId
+      ? `<div class="m-video-wrap">
+           <div class="m-video-lbl">▶ Відеоогляд</div>
+           <iframe class="m-video-frame" src="https://www.youtube.com/embed/${ytId}" allowfullscreen loading="lazy"></iframe>
+         </div>`
+      : '';
+
     photosHtml=`<div class="m-photos">
       <div class="m-main-img" id="m-main"><img id="m-main-img" src="${esc(moPhotos[0])}" onerror="this.innerHTML='📦'"></div>
-      ${nav}${thumbs}
+      ${nav}${thumbs}${videoHtml}
     </div>`;
   }
 
