@@ -435,6 +435,75 @@ td a:hover{text-decoration:underline}
 /* Курсор zoom на головному фото */
 .m-main-img img{ cursor:zoom-in }
 
+
+/* ── CUSTOMIZATION BLOCK ── */
+.m-custom{
+  border-top:1px solid var(--border);
+  padding:.75rem .9rem;
+  background:var(--surface2);
+  border-radius:0 0 0 0;
+}
+.m-custom-title{
+  font-size:.65rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--text3);margin-bottom:.55rem;
+  display:flex;align-items:center;gap:.4rem;
+}
+.m-custom-title svg{flex-shrink:0}
+.m-opts-grid{
+  display:flex;flex-wrap:wrap;gap:.3rem;
+  margin-bottom:.6rem;
+}
+.m-opt{
+  display:inline-flex;align-items:center;gap:.3rem;
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:6px;padding:.28rem .55rem;
+  font-size:.72rem;font-weight:500;cursor:pointer;
+  color:var(--text2);transition:all .15s;user-select:none;
+}
+.m-opt:hover{border-color:var(--accent);color:var(--accent);background:var(--accentbg)}
+.m-opt.selected{
+  background:var(--accent);border-color:var(--accent);
+  color:#fff;font-weight:600;
+}
+.m-opt .m-opt-check{
+  width:13px;height:13px;border-radius:3px;
+  border:1.5px solid currentColor;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.6rem;flex-shrink:0;
+}
+.m-level-result{
+  display:flex;align-items:center;gap:.65rem;
+  padding:.55rem .7rem;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);
+  transition:all .2s;
+}
+.m-level-num{
+  font-size:1.6rem;font-weight:800;line-height:1;
+  min-width:32px;text-align:center;
+  transition:color .2s;
+}
+.m-level-info{flex:1}
+.m-level-name{font-size:.78rem;font-weight:700;color:var(--text);margin-bottom:.15rem}
+.m-level-timing{display:flex;gap:.3rem;flex-wrap:wrap}
+.m-level-timing span{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:4px;padding:.1rem .38rem;
+  font-size:.63rem;font-weight:700;color:var(--text3);
+}
+/* Кольори рівнів */
+.lvl-0 .m-level-num{color:var(--text3)}
+.lvl-1 .m-level-num{color:#16a34a}
+.lvl-1{border-color:rgba(22,163,74,.25)!important;background:rgba(22,163,74,.04)!important}
+.lvl-2 .m-level-num{color:#2563eb}
+.lvl-2{border-color:rgba(37,99,235,.25)!important;background:rgba(37,99,235,.04)!important}
+.lvl-3 .m-level-num{color:#d97706}
+.lvl-3{border-color:rgba(217,119,6,.25)!important;background:rgba(217,119,6,.04)!important}
+.lvl-4 .m-level-num{color:#dc2626}
+.lvl-4{border-color:rgba(220,38,38,.25)!important;background:rgba(220,38,38,.04)!important}
+.lvl-5 .m-level-num{color:#7c3aed}
+.lvl-5{border-color:rgba(124,58,237,.25)!important;background:rgba(124,58,237,.04)!important}
+
 /* ── STATES ── */
 .st{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 2rem;gap:.65rem;color:var(--text3);text-align:center}
 .spin{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite}
@@ -1003,8 +1072,35 @@ function openMo(row){
   });
   fields+='</div>';
 
+    // Блок кастомності
+  const optCol = headers.find(h => /можлив|опц/i.test(h));
+  let customBlock = '';
+  if(optCol && row[optCol]){
+    const rawOpts = String(row[optCol]);
+    // Розбиваємо по крапці з комою, комою або новим рядком
+    const opts = rawOpts.split(/[;,\n]+/).map(o=>o.trim()).filter(Boolean);
+    if(opts.length){
+      const optChips = opts.map(o =>
+        `<div class="m-opt" data-opt="${esc(o)}" onclick="toggleOpt(this,'${esc(o)}')" title="${esc(o)}">
+          <span class="m-opt-check"></span>${esc(o)}
+        </div>`
+      ).join('');
+      customBlock = `<div class="m-custom">
+        <div class="m-custom-title">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Можливі додаткові опції — визначення рівня кастомності
+        </div>
+        <div class="m-opts-grid">${optChips}</div>
+        <div class="m-level-result lvl-0" id="m-level-res">
+          <div class="m-level-num">—</div>
+          <div class="m-level-info"><div class="m-level-name">Оберіть опції для визначення рівня</div></div>
+        </div>
+      </div>`;
+    }
+  }
+
   document.getElementById('m-body').innerHTML=
-    photosHtml+`<div class="m-fields-wrap">${fields}</div>`;
+    photosHtml+`<div class="m-fields-wrap">${fields}${customBlock}</div>`;
 
   document.getElementById('mo').classList.add('open');
   // store kd for copy
@@ -1065,6 +1161,59 @@ function setView(v){
 
 // ── INIT ──
 
+
+
+// ── CUSTOMIZATION LOGIC ──
+const OPTION_LEVELS = [
+  // [regex, рівень]
+  [/Залишити як є|Змінити колір/i, 1],
+  [/надставні борти|клапан задній|тент|шиберн|трап|сходинки|відкидні/i, 2],
+  [/надрамник|розробка/i, 3],
+  [/нове шасі|нова варіац|нові габарит/i, 4],
+  [/дослідн|перспективн|5 продукт/i, 5],
+];
+
+const LEVEL_INFO = {
+  0: { name: 'Оберіть опції для визначення рівня', timing: [], color: '' },
+  1: { name: '1-й рівень кастомності', timing: ['ВГК — 0 днів','ВГТ — 1 день'], color: '#16a34a' },
+  2: { name: '2-й рівень кастомності', timing: ['ВГК — 5 днів','ВГТ — 5 днів'], color: '#2563eb' },
+  3: { name: '3-й рівень кастомності', timing: ['ВГК — 8 днів','ВГТ — 6 днів'], color: '#d97706' },
+  4: { name: '4-й рівень кастомності', timing: ['ВГК — 15 днів','ВГТ — 7 днів'], color: '#dc2626' },
+  5: { name: '5-й рівень кастомності', timing: ['ВГК — 250 днів','ВГТ — 7 днів'], color: '#7c3aed' },
+};
+
+function calcLevel(selectedOpts){
+  if(!selectedOpts.length) return 0;
+  let max = 1; // мінімум 1 якщо щось обрано
+  for(const opt of selectedOpts){
+    for(const [rx, lvl] of OPTION_LEVELS){
+      if(rx.test(opt) && lvl > max) max = lvl;
+    }
+  }
+  return max;
+}
+
+function toggleOpt(el, opt){
+  el.classList.toggle('selected');
+  el.querySelector('.m-opt-check').textContent = el.classList.contains('selected') ? '✓' : '';
+  updateLevelResult();
+}
+
+function updateLevelResult(){
+  const selected = [...document.querySelectorAll('.m-opt.selected')].map(el => el.dataset.opt);
+  const lvl = calcLevel(selected);
+  const info = LEVEL_INFO[lvl];
+  const res = document.getElementById('m-level-res');
+  if(!res) return;
+  res.className = 'm-level-result lvl-' + lvl;
+  const timingHtml = info.timing.map(t=>`<span>${t}</span>`).join('');
+  res.innerHTML = `
+    <div class="m-level-num">${lvl || '—'}</div>
+    <div class="m-level-info">
+      <div class="m-level-name">${info.name}</div>
+      ${timingHtml ? `<div class="m-level-timing">${timingHtml}</div>` : ''}
+    </div>`;
+}
 
 // ── LIGHTBOX ──
 function lbOpen(idx){
