@@ -390,8 +390,8 @@ td a:hover{text-decoration:underline}
 }
 .lb.open{display:flex}
 .lb-img{
-  max-width:92vw;max-height:92vh;
-  object-fit:contain;border-radius:8px;
+  max-width:98vw;max-height:96vh;
+  object-fit:contain;border-radius:4px;
   box-shadow:0 32px 80px rgba(0,0,0,.6);
   cursor:default;
   animation:lbIn .18s ease;
@@ -685,7 +685,7 @@ function driveImgUrl(url){
   const m2=url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
   let id=m1?m1[1]:m2?m2[1]:'';
   if(!id) return url;
-  return 'https://drive.google.com/thumbnail?id='+id+'&sz=w600';
+  return 'https://drive.google.com/thumbnail?id='+id+'&sz=w1200';
 }
 
 function toast(msg,ms=2500){
@@ -1053,7 +1053,9 @@ function setView(v){
 function lbOpen(idx){
   if(!moPhotos.length) return;
   moPhotoIdx = (idx + moPhotos.length) % moPhotos.length;
-  document.getElementById('lb-img').src = moPhotos[moPhotoIdx];
+  // Завантажуємо великий розмір для лайтбоксу
+  const bigSrc = moPhotos[moPhotoIdx].replace('&sz=w1200','&sz=w2000').replace('&sz=w600','&sz=w2000');
+  document.getElementById('lb-img').src = bigSrc;
   document.getElementById('lb-counter').textContent =
     moPhotos.length > 1 ? (moPhotoIdx+1) + ' / ' + moPhotos.length : '';
   document.getElementById('lb-counter').style.display = moPhotos.length>1?'':'none';
@@ -1065,7 +1067,8 @@ function lbOpen(idx){
 function lbClose(){ document.getElementById('lb').classList.remove('open'); }
 function lbNav(dir){
   moPhotoIdx = (moPhotoIdx + dir + moPhotos.length) % moPhotos.length;
-  document.getElementById('lb-img').src = moPhotos[moPhotoIdx];
+  const bigSrc2 = moPhotos[moPhotoIdx].replace('&sz=w1200','&sz=w2000').replace('&sz=w600','&sz=w2000');
+  document.getElementById('lb-img').src = bigSrc2;
   document.getElementById('lb-counter').textContent = (moPhotoIdx+1) + ' / ' + moPhotos.length;
   // Синхронізуємо з модалкою
   switchPhoto(moPhotoIdx);
