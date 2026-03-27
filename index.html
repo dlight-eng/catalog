@@ -1073,31 +1073,36 @@ function openMo(row){
   fields+='</div>';
 
     // Блок кастомності
-  const optCol = headers.find(h => /можлив|опц/i.test(h));
-  let customBlock = '';
-  if(optCol && row[optCol]){
-    const rawOpts = String(row[optCol]);
-    // Розбиваємо по крапці з комою, комою або новим рядком
-    const opts = rawOpts.split(/[;,\n]+/).map(o=>o.trim()).filter(Boolean);
-    if(opts.length){
-      const optChips = opts.map(o =>
-        `<div class="m-opt" data-opt="${esc(o)}" onclick="toggleOpt(this,'${esc(o)}')" title="${esc(o)}">
-          <span class="m-opt-check"></span>${esc(o)}
-        </div>`
-      ).join('');
-      customBlock = `<div class="m-custom">
-        <div class="m-custom-title">
-          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          Можливі додаткові опції — визначення рівня кастомності
-        </div>
-        <div class="m-opts-grid">${optChips}</div>
-        <div class="m-level-result lvl-0" id="m-level-res">
-          <div class="m-level-num">—</div>
-          <div class="m-level-info"><div class="m-level-name">Оберіть опції для визначення рівня</div></div>
-        </div>
-      </div>`;
-    }
-  }
+  const optCol = headers.find(h => /можлив/i.test(h) && /опц/i.test(h));
+  const ALL_OPTIONS = [
+    'Залишити як є','Змінити колір',
+    'Надставні борти','Клапан задній','Тент з дугами тенту',
+    'Варіант з шиберною заслінкою','Задній трап з драбиною на клапані',
+    'Бокові відкидні сходинки','Варіант вивантаження кузова',
+    'Розробка надрамника під нове шасі',
+    'Нове шасі з новими вимогами','Нова варіація комплектації кузова',
+    'Нові габаритні розміри',
+  ];
+  const rawOpts = optCol && row[optCol] ? String(row[optCol]) : '';
+  const opts = rawOpts
+    ? rawOpts.split(/[;,\n]+/).map(o=>o.trim()).filter(Boolean)
+    : ALL_OPTIONS;
+  const optChips = opts.map(o =>
+    `<div class="m-opt" data-opt="${esc(o)}" onclick="toggleOpt(this,'${esc(o)}')" title="${esc(o)}">
+       <span class="m-opt-check"></span>${esc(o)}
+     </div>`
+  ).join('');
+  const customBlock = `<div class="m-custom">
+    <div class="m-custom-title">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Можливі додаткові опції — визначення рівня кастомності
+    </div>
+    <div class="m-opts-grid">${optChips}</div>
+    <div class="m-level-result lvl-0" id="m-level-res">
+      <div class="m-level-num">—</div>
+      <div class="m-level-info"><div class="m-level-name">Оберіть опції для визначення рівня</div></div>
+    </div>
+  </div>`;
 
   document.getElementById('m-body').innerHTML=
     photosHtml+`<div class="m-fields-wrap">${fields}${customBlock}</div>`;
