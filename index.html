@@ -1051,6 +1051,8 @@ function openMo(row){
   let fields='<div class="m-fields">';
   headers.forEach(k=>{
     if(allImgSet.has(k)) return;
+    // Приховуємо поля кастомності — вони є в інтерактивному блоці знизу
+    if(/катег.*каст|кастомн|можлив.*опц/i.test(k)) return;
     const v=row[k];
     if(!v||String(v).trim()==='') return; // пропускаємо порожні
     const isLong=String(v).length>50;
