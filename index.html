@@ -444,6 +444,41 @@ td a:hover{text-decoration:underline}
 .m-main-img img{ cursor:zoom-in }
 
 
+
+/* ── GENERAL VIEW BLOCK ── */
+.m-zagview{
+  border-top:1px solid var(--border);
+  flex-shrink:0;
+}
+.m-zagview-toggle{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.45rem .6rem;cursor:pointer;
+  background:var(--surface2);
+  transition:background .12s;user-select:none;
+}
+.m-zagview-toggle:hover{background:var(--surface3)}
+.m-zagview-lbl{
+  font-size:.6rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--text3);
+  display:flex;align-items:center;gap:.3rem;
+}
+.m-zagview-arr{color:var(--text3);font-size:.7rem;transition:transform .2s}
+.m-zagview.open .m-zagview-arr{transform:rotate(180deg)}
+.m-zagview-body{display:none;background:var(--surface3)}
+.m-zagview.open .m-zagview-body{display:block}
+.m-zagview-img{
+  width:100%;display:block;
+  object-fit:contain;max-height:280px;
+  background:var(--surface3);
+}
+.m-zagview-link{
+  display:flex;align-items:center;justify-content:center;gap:.3rem;
+  padding:.4rem;font-size:.7rem;color:var(--accent);
+  background:var(--surface2);border-top:1px solid var(--border);
+  text-decoration:none;font-weight:600;
+}
+.m-zagview-link:hover{background:var(--accentbg)}
+
 /* ── CUSTOMIZATION BLOCK ── */
 .m-custom{
   border-top:1px solid var(--border);
@@ -596,8 +631,7 @@ td a:hover{text-decoration:underline}
 <header class="hdr">
   <div class="hdr-left">
     <a class="logo" href="#">
-      <div class="logo-mark">DL</div>
-      <div class="logo-text">D<span>LIGHT</span></div>
+      <img src="data:image/png;base64,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iJ8hLRuBJsPYNwQGNBuBtSDd1n2vdzcs3c1DlKqiVKlMB8E+TKss8siOXIfCPVpWnbVpSr8rbVGlaUxMLDjqGAQFqAyBOZPqhc1VbjBqq3GD63PqdRrDk6Nzbju3b0ZG5s1tq+R9b89PvEGqrcYbN1V54TH1Ytgtzt1TqSiXYQdYSiTsMw/l5jaOXbtUQEjMmF0NDPXztp6duZztn7n1DnKxJI1jS5xTowA24ZSyx5q6hUFJO8GceyMEOizqFK2xatMt+SUpbEhLIYStXnLIG1R9pOZPtMEesoI9VG2PgAOpaqTc3StDMq2FmHtUqDtQm7Up4mnTm64wFMlw+sq8mRmfaYIIcc0OFiFhavE7hv0Zb60934OJ3Dfoy31p7vwQQ3qI+iOpZzHijidw36Mt9ae78HE7hv0Zb60934IINRH0R1IzHijidw36Mt9ae78HE7hv0Zb60934IINRH0R1IzHijidw36Mt9ae78HE7hv0Zb60934IINRH0R1IzHijidw36Mt9ae78HE7hv0Zb60934IINRH0R1IzHijidw36Mt9ae78HE7hv0Zb60934IINRH0R1IzHijidw36Mt9ae78HE7hv0Zb60934IINRH0R1IzHijidw36Mt9ae78HE7hv0Zb60934IINRH0R1IzHijidw36Mt9ae78HE7hv0Zb60934IINRH0R1IzHijidw36Mt9ae78HE7hv0Zb60934IINRH0R1IzHijidw29dsNdZe78Oa17Yt615NUnb1GkaYys6yxLshJWd6jyqPtOcEEKaxrfNFkEkpXggghawv/Z" alt="DLight" style="height:36px;width:auto;display:block;">
     </a>
     <div class="hdr-divider"></div>
     <div class="hdr-subtitle">Каталог техніки · 2025</div>
@@ -719,19 +753,19 @@ td a:hover{text-decoration:underline}
   </div>
   <div class="tb-r">
     <div class="vt">
-      <button class="vb on" id="vb-t" onclick="setView('table')">
-        <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor"><rect x="0" y="0" width="12" height="2.5" rx="1"/><rect x="0" y="4.75" width="12" height="2.5" rx="1"/><rect x="0" y="9.5" width="12" height="2.5" rx="1"/></svg>
-        Таблиця
-      </button>
-      <button class="vb" id="vb-g" onclick="setView('grid')">
+      <button class="vb on" id="vb-g" onclick="setView('grid')">
         <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor"><rect x="0" y="0" width="5" height="5" rx="1"/><rect x="7" y="0" width="5" height="5" rx="1"/><rect x="0" y="7" width="5" height="5" rx="1"/><rect x="7" y="7" width="5" height="5" rx="1"/></svg>
         Картки
+      </button>
+      <button class="vb" id="vb-t" onclick="setView('table')">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor"><rect x="0" y="0" width="12" height="2.5" rx="1"/><rect x="0" y="4.75" width="12" height="2.5" rx="1"/><rect x="0" y="9.5" width="12" height="2.5" rx="1"/></svg>
+        Таблиця
       </button>
     </div>
   </div>
 </div>
 
-<div class="tw" id="tw"></div>
+<div class="tw" id="tw" style="display:none"></div>
 <div class="gw" id="gw"><div class="cards" id="cards"></div></div>
 <div class="pag" id="pag"></div>
 
@@ -754,7 +788,7 @@ const MAX_SEL_COLS = 14;
 let allRows=[], headers=[], apiImageColumns=[];
 let selF=[];
 let imgCol=null, nameCol=null, kdCol=null, catCol=null;
-let selV={}, gsQ='', sortCol=null, sortDir=1, view='table', page=1;
+let selV={}, gsQ='', sortCol=null, sortDir=1, view='grid', page=1;
 
 // ── UTILS ──
 const esc  = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1005,7 +1039,8 @@ let moPhotos=[], moPhotoIdx=0;
 function openMo(row){
   const allImgCols=apiImageColumns.length>0?apiImageColumns:(imgCol?[imgCol]:[]);
   const allImgSet=new Set(allImgCols);
-  moPhotos=allImgCols.map(c=>driveImgUrl(row[c])).filter(v=>v&&isImg(v));
+  // Основні фото (без загального вигляду — він в окремому блоці)
+  moPhotos = allImgCols.map(c=>driveImgUrl(row[c])).filter(v=>v&&isImg(v));
   moPhotoIdx=0;
 
   // Header
@@ -1028,7 +1063,23 @@ function openMo(row){
            <iframe class="m-video-frame" src="https://www.youtube.com/embed/${ytId0}" allowfullscreen loading="lazy"></iframe>
          </div>`
       : '';
-    photosHtml=`<div class="m-photos"><div class="m-main-img" style="flex:1">📦</div>${videoHtml0}</div>`;
+    const zagCol0 = headers.find(h=>/загальн.*вид|вид.*загальн/i.test(h));
+    const zagVal0 = zagCol0 ? row[zagCol0] : '';
+    let zagBlock0 = '';
+    if(zagVal0 && isUrl(zagVal0)){
+      const zagImgSrc0 = driveImgUrl(zagVal0);
+      zagBlock0 = `<div class="m-zagview" id="m-zagview">
+        <div class="m-zagview-toggle" onclick="toggleZagview()">
+          <div class="m-zagview-lbl">Загальний вигляд</div>
+          <span class="m-zagview-arr">▼</span>
+        </div>
+        <div class="m-zagview-body">
+          <img class="m-zagview-img" src="${esc(zagImgSrc0)}" onerror="this.style.display='none'">
+          <a class="m-zagview-link" href="${esc(zagVal0)}" target="_blank">🔗 Відкрити в Drive</a>
+        </div>
+      </div>`;
+    }
+    photosHtml=`<div class="m-photos"><div class="m-main-img" style="flex:1">📦</div>${videoHtml0}${zagBlock0}</div>`;
   } else {
     const nav=moPhotos.length>1
       ?`<div class="m-photo-nav">
@@ -1049,9 +1100,45 @@ function openMo(row){
          </div>`
       : '';
 
+    // Загальний вид
+    const zagCol2 = headers.find(h=>/загальн.*вид|вид.*загальн/i.test(h));
+    const zagVal2 = zagCol2 ? row[zagCol2] : '';
+    let zagBlockHtml = '';
+    if(zagVal2){
+      if(isUrl(zagVal2)){
+        // Це посилання — показуємо як зображення або як кнопку
+        const zagImgSrc = driveImgUrl(zagVal2);
+        zagBlockHtml = `<div class="m-zagview" id="m-zagview">
+          <div class="m-zagview-toggle" onclick="toggleZagview()">
+            <div class="m-zagview-lbl">
+              <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 9 6 6m0-6-6 6"/></svg>
+              Загальний вигляд
+            </div>
+            <span class="m-zagview-arr">▼</span>
+          </div>
+          <div class="m-zagview-body">
+            <img class="m-zagview-img" src="${esc(zagImgSrc)}" onerror="this.style.display='none'" onclick="window.open('${esc(zagVal2)}','_blank')" style="cursor:pointer" title="Відкрити в повному розмірі">
+            <a class="m-zagview-link" href="${esc(zagVal2)}" target="_blank">🔗 Відкрити в Drive</a>
+          </div>
+        </div>`;
+      } else {
+        // Це текст — просто показуємо
+        zagBlockHtml = `<div class="m-zagview" id="m-zagview">
+          <div class="m-zagview-toggle" onclick="toggleZagview()">
+            <div class="m-zagview-lbl">
+              <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 9 6 6m0-6-6 6"/></svg>
+              Загальний вигляд
+            </div>
+            <span class="m-zagview-arr">▼</span>
+          </div>
+          <div class="m-zagview-body" style="padding:.5rem .6rem;font-size:.78rem;color:var(--text2)">${esc(zagVal2)}</div>
+        </div>`;
+      }
+    }
+
     photosHtml=`<div class="m-photos">
       <div class="m-main-img" id="m-main"><img id="m-main-img" src="${esc(moPhotos[0])}" onerror="this.innerHTML='📦'" onclick="lbOpen(moPhotoIdx)" title="Клікніть для збільшення"></div>
-      ${nav}${thumbs}${videoHtml}
+      ${nav}${thumbs}${videoHtml}${zagBlockHtml}
     </div>`;
   }
 
@@ -1061,6 +1148,7 @@ function openMo(row){
     if(allImgSet.has(k)) return;
     // Приховуємо поля кастомності — вони є в інтерактивному блоці знизу
     if(/катег.*каст|кастомн|можлив.*опц/i.test(k)) return;
+    if(/загальн.*вид|вид.*загальн/i.test(k)) return; // є окремим блоком
     if(!k||k.trim()==='') return; // порожній ключ
     if(/^№$/.test(k.trim())) return; // порядковий номер — зайвий
     const v=row[k];
@@ -1257,6 +1345,12 @@ function lbNav(dir){
   document.getElementById('lb-counter').textContent = (moPhotoIdx+1) + ' / ' + moPhotos.length;
   // Синхронізуємо з модалкою
   switchPhoto(moPhotoIdx);
+}
+
+
+function toggleZagview(){
+  const el=document.getElementById('m-zagview');
+  if(el) el.classList.toggle('open');
 }
 
 function toggleBanner(){
