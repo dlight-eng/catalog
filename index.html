@@ -569,6 +569,19 @@ td a:hover{text-decoration:underline}
 .lvl-5{border-color:rgba(124,58,237,.25)!important;background:rgba(124,58,237,.04)!important}
 
 
+
+/* ── HIGHLIGHT ── */
+mark{
+  background:#fef08a;color:inherit;border-radius:2px;
+  padding:0 1px;font-style:normal;
+}
+.card-snippet{
+  font-size:.68rem;color:var(--text3);line-height:1.45;
+  margin-top:.25rem;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.card-snippet mark{background:#fef08a}
+
 /* ── COMPARE ── */
 .compare-bar{
   position:fixed;bottom:0;left:0;right:0;z-index:150;
@@ -1153,9 +1166,9 @@ function renderTable(pr){
       if(isUrl(v)){
         h+=`<td><a href="${esc(v)}" target="_blank" onclick="event.stopPropagation()">🔗 посилання</a></td>`;
       } else if(isKD){
-        h+=`<td>${esc(v)}<button class="copy-btn" onclick="event.stopPropagation();copyTableKD(this,'${esc(v)}')" title="Копіювати КД">⎘</button></td>`;
+        h+=`<td>${highlight(v,gsQ)}<button class="copy-btn" onclick="event.stopPropagation();copyTableKD(this,'${esc(v)}')" title="Копіювати КД">⎘</button></td>`;
       } else {
-        h+=`<td title="${esc(v)}">${esc(v)}</td>`;
+        h+=`<td title="${esc(v)}">${highlight(v,gsQ)}</td>`;
       }
     });
     h+='</tr>';
@@ -1195,7 +1208,9 @@ function renderGrid(pr){
       :`<div class="card-img">📦</div>`;
     const cat=catCol&&row[catCol]?`<div class="card-cat">${esc(row[catCol])}</div>`:'';
     const badges=badgeCols.filter(c=>row[c]).map(c=>`<span class="card-badge">${esc(row[c])}</span>`).join('');
-    card.innerHTML=imgH+`<div class="card-body">${cat}<div class="card-name">${esc(row[nameCol]??'—')}</div>${badges?`<div class="card-meta">${badges}</div>`:''}</div>`;
+    const snippet=gsQ?`<div class="card-snippet">${getSnippet(row,gsQ)}</div>`:'';
+    const cardName=highlight(row[nameCol]??'—', gsQ);
+    card.innerHTML=imgH+`<div class="card-body">${cat}<div class="card-name">${cardName}</div>${snippet}${badges?`<div class="card-meta">${badges}</div>`:''}</div>`;
     // Кнопка порівняння
     const cmpBtn=document.createElement('button');
     cmpBtn.className='card-compare-btn'+(isInCmp?' active':'');
@@ -1368,9 +1383,9 @@ function openMo(row){
       const isDesc=/опис|характеристик|переваги/i.test(k);
       const copyable=kdCol&&k===kdCol;
       if(isDesc){
-        vh=esc(v)+`<button class="mf-copy mf-copy-desc" onclick="copyField(this,'${esc(v)}')" title="Копіювати опис">⎘ Копіювати</button>`;
+        vh=highlight(v,gsQ)+`<button class="mf-copy mf-copy-desc" onclick="copyField(this,'${esc(v)}')" title="Копіювати опис">⎘ Копіювати</button>`;
       } else {
-        vh=esc(v)+(copyable?`<button class="mf-copy" onclick="copyField(this,'${esc(v)}')" title="Копіювати">⎘</button>`:'');
+        vh=highlight(v,gsQ)+(copyable?`<button class="mf-copy" onclick="copyField(this,'${esc(v)}')" title="Копіювати">⎘</button>`:'');
       }
     }
     fields+=`<div class="mf${(isLong||alwaysFull)?' full':''}"><div class="mf-k">${esc(k)}</div><div class="mf-v">${vh}</div></div>`;
@@ -1558,6 +1573,34 @@ function toggleZagview(){
   if(el) el.classList.toggle('open');
 }
 
+
+
+// ── HIGHLIGHT ──
+function highlight(text, query){
+  if(!query||!text) return esc(text||'');
+  const safe = query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const re = new RegExp('('+safe+')', 'gi');
+  return esc(text).replace(re, '<mark>$1</mark>');
+}
+
+function getSnippet(row, query){
+  if(!query) return '';
+  const q = query.toLowerCase();
+  // Шукаємо поле де є збіг (крім фото)
+  const allImgSet = new Set(apiImageColumns);
+  for(const k of headers){
+    if(allImgSet.has(k)) continue;
+    const v = String(row[k]||'');
+    const idx = v.toLowerCase().indexOf(q);
+    if(idx < 0) continue;
+    // Беремо фрагмент навколо збігу
+    const start = Math.max(0, idx-30);
+    const end   = Math.min(v.length, idx+query.length+60);
+    let snippet = (start>0?'…':'')+v.slice(start,end)+(end<v.length?'…':'');
+    return '<span style="font-size:.63rem;color:var(--text3);font-weight:500">'+k+':</span> '+highlight(snippet, query);
+  }
+  return '';
+}
 
 // ── COMPARE STATE ──
 let compareItems = [];
