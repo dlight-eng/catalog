@@ -301,6 +301,15 @@ td a:hover{text-decoration:underline}
 }
 .m-copy-kd:hover{background:var(--accentbg2)}
 .m-copy-kd.copied{background:rgba(22,163,74,.08);border-color:rgba(22,163,74,.2);color:var(--green)}
+.m-cmp-btn{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:6px;padding:.2rem .55rem;cursor:pointer;
+  color:var(--text3);font-family:inherit;font-size:.68rem;font-weight:700;
+  display:flex;align-items:center;gap:.25rem;transition:all .15s;white-space:nowrap;
+}
+.m-cmp-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accentbg)}
+.m-cmp-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.m-cmp-btn.active:hover{background:var(--accent2)}
 
 /* Modal body: left photos + right fields */
 .m-body{
@@ -650,7 +659,8 @@ td a:hover{text-decoration:underline}
 .cmp-table th{
   background:var(--surface2);border:1px solid var(--border);
   padding:.5rem .75rem;text-align:left;font-weight:700;
-  color:var(--text);min-width:180px;
+  color:var(--text);min-width:200px;max-width:300px;
+  white-space:normal;word-break:break-word;
 }
 .cmp-table th.row-lbl{
   min-width:150px;max-width:150px;width:150px;
@@ -660,6 +670,7 @@ td a:hover{text-decoration:underline}
 .cmp-table td{
   border:1px solid var(--border);padding:.45rem .75rem;
   vertical-align:top;color:var(--text2);
+  white-space:normal;word-break:break-word;max-width:300px;
 }
 .cmp-table td.diff{background:rgba(245,158,11,.08);color:var(--text)}
 .cmp-table td.same{color:var(--text3)}
@@ -1222,9 +1233,17 @@ function openMo(row){
   const kd=kdCol&&row[kdCol]?row[kdCol]:'';
   const cat=catCol&&row[catCol]?`<div class="m-cat-lbl">${esc(row[catCol])}</div>`:'';
   const copyKdBtn=kd?`<button class="m-copy-kd" id="m-kd-btn" onclick="copyMoKD()">⎘ ${esc(kd)}</button>`:'';
+  // Кнопка порівняння в шапці
+  const rowKey2 = row[kdCol]||row[nameCol]||'';
+  const isInCmp2 = compareItems.some(r=>(r[kdCol]||r[nameCol])===rowKey2);
+  const cmpBtnHtml = `<button class="m-cmp-btn${isInCmp2?' active':''}" id="m-mo-cmp-btn" onclick="toggleMoCmp()">
+    ${isInCmp2?'✓ У порівнянні':'⚖ Порівняти'}
+  </button>`;
   document.getElementById('m-hdr').innerHTML=
     `<div class="m-hdr-left">${cat}<div class="m-title">${esc(row[nameCol]??'—')}</div></div>
-     <div class="m-hdr-right">${copyKdBtn}<button class="mcl" onclick="closeMo()">×</button></div>`;
+     <div class="m-hdr-right">${cmpBtnHtml}${copyKdBtn}<button class="mcl" onclick="closeMo()">×</button></div>`;
+  // Зберігаємо поточний рядок для кнопки порівняння
+  document.getElementById('mo')._row = row;
 
   // Photos (left)
   let photosHtml='';
@@ -1597,12 +1616,13 @@ function openCompare(){
   const allCols  = headers.filter(h=>!skipCols.has(h)&&h);
 
   let html = '<table class="cmp-table"><thead><tr><th class="row-lbl">Характеристика</th>';
-  compareItems.forEach(r=>{
+  compareItems.forEach((r,ci)=>{
     const src = allImgCols2.map(c=>driveImgUrl(r[c])).find(v=>v&&isImg(v))||'';
     html += `<th>
       ${src?`<img class="cmp-photo" src="${esc(src)}" onerror="this.style.display='none'">` :'<div style="height:60px;background:var(--surface3);border-radius:6px;margin-bottom:.3rem"></div>'}
       <div class="cmp-name">${esc(r[nameCol]||'—')}</div>
       <div class="cmp-kd">${esc(r[kdCol]||'')}</div>
+      <button onclick="removeCmpItem(${ci})" style="margin-top:.4rem;background:none;border:1px solid var(--border);border-radius:4px;padding:.15rem .5rem;font-size:.65rem;cursor:pointer;color:var(--text3);font-family:inherit;transition:all .15s" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text3)'">✕ Вилучити</button>
     </th>`;
   });
   html += '</tr></thead><tbody>';
@@ -1624,6 +1644,40 @@ function openCompare(){
   html += '</tbody></table>';
   document.getElementById('cmo-body').innerHTML = html;
   document.getElementById('cmo').classList.add('open');
+}
+
+function toggleMoCmp(){
+  const row = document.getElementById('mo')._row;
+  if(!row) return;
+  const btn = document.getElementById('m-mo-cmp-btn');
+  const rowKey = row[kdCol]||row[nameCol]||'';
+  const idx = compareItems.findIndex(r=>(r[kdCol]||r[nameCol])===rowKey);
+  if(idx >= 0){
+    compareItems.splice(idx,1);
+    btn.className='m-cmp-btn';
+    btn.innerHTML='⚖ Порівняти';
+  } else {
+    if(compareItems.length >= MAX_COMPARE){
+      toast('Максимум '+MAX_COMPARE+' позиції для порівняння'); return;
+    }
+    compareItems.push(row);
+    btn.className='m-cmp-btn active';
+    btn.innerHTML='✓ У порівнянні';
+  }
+  renderCompareBar();
+  // Оновлюємо кнопку на картці якщо видимо
+  renderContent();
+}
+
+function removeCmpItem(idx){
+  compareItems.splice(idx,1);
+  renderCompareBar();
+  if(compareItems.length < 2){
+    document.getElementById('cmo').classList.remove('open');
+    renderContent();
+  } else {
+    openCompare();
+  }
 }
 
 function isAllSame(col){
