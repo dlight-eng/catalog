@@ -445,6 +445,18 @@ td a:hover{text-decoration:underline}
 
 
 
+
+/* ── FOLDER PHOTOS LINK ── */
+.m-folder-link{
+  display:flex;align-items:center;justify-content:center;gap:.4rem;
+  margin:.5rem;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:.4rem .7rem;
+  font-size:.72rem;font-weight:700;color:var(--text2);
+  text-decoration:none;transition:all .15s;
+}
+.m-folder-link:hover{background:var(--accentbg);border-color:rgba(37,99,235,.25);color:var(--accent)}
+
 /* ── GENERAL VIEW BLOCK ── */
 .m-zagview{
   border-top:1px solid var(--border);
@@ -1136,9 +1148,18 @@ function openMo(row){
       }
     }
 
+    // Кнопка-посилання на папку з фото
+    const folderCol = headers.find(h=>/посилання.*папк|папк.*посилан/i.test(h));
+    const folderUrl = folderCol ? row[folderCol] : '';
+    const folderBtnHtml = folderUrl && isUrl(folderUrl)
+      ? `<a class="m-folder-link" href="${esc(folderUrl)}" target="_blank">
+           📁 Більше фото
+         </a>`
+      : '';
+
     photosHtml=`<div class="m-photos">
       <div class="m-main-img" id="m-main"><img id="m-main-img" src="${esc(moPhotos[0])}" onerror="this.innerHTML='📦'" onclick="lbOpen(moPhotoIdx)" title="Клікніть для збільшення"></div>
-      ${nav}${thumbs}${videoHtml}${zagBlockHtml}
+      ${nav}${thumbs}${videoHtml}${zagBlockHtml}${folderBtnHtml}
     </div>`;
   }
 
@@ -1346,6 +1367,8 @@ function lbNav(dir){
   // Синхронізуємо з модалкою
   switchPhoto(moPhotoIdx);
 }
+
+
 
 
 function toggleZagview(){
