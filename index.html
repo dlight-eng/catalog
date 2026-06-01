@@ -1944,9 +1944,9 @@ async function astSearch(){
     const catalogText=candidates.map((row,i)=>{
       const fields=headers
         .filter(h=>!skipCols.has(h)&&row[h]&&String(row[h]).trim())
-        .map(h=>`${h}: ${row[h]}`)
+        .map(function(h){return h+': '+String(row[h]||'');})
         .join(' | ');
-      return `[${i+1}] ${fields}`;
+      return '['+(i+1)+'] '+fields;
     }).join('
 ');
 
