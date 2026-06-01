@@ -1143,7 +1143,7 @@ mark{
 <div class="toast" id="toast"></div>
 
 <script>
-const API_URL   = 'https://script.google.com/macros/s/AKfycbz318VBUJgEQHdLz6Un9Rzen_ji3tUhvthXND1LkhIJYC_JhpPcGdp06y5NHpgCDUGP7A/exec';
+const API_URL   = 'https://script.google.com/macros/s/AKfycbyFotJ__6HFkhRIg7tEKAehmuwmWFEIgypGkmN0Irp9JhRRVNZmDPD9LkVFSqFAt0sbfw/exec';
 const PAGE_SIZE    = 50;
 const MAX_SEL_UNIQ = 200;
 const MAX_SEL_COLS = 14;
@@ -1979,16 +1979,16 @@ async function astSearch(){
       }
     };
 
-    // Передаємо через GET параметри (Apps Script не підтримує CORS для POST)
-    const systemText = body.system_instruction.parts[0].text;
-    const queryText  = body.contents[body.contents.length-1].parts[0].text;
+    // GET через Apps Script — передаємо тільки запит і стислий каталог
+    const queryText = body.contents[body.contents.length-1].parts[0].text;
     const historyForGet = body.contents.slice(0,-1);
     
+    // Беремо тільки системний промпт без каталогу — каталог Apps Script прочитає сам
     const params = new URLSearchParams({
       action: 'gemini',
-      system: systemText,
       q: queryText,
-      history: JSON.stringify(historyForGet)
+      catalog: body.system_instruction.parts[0].text.split('КАТАЛОГ КАНДИДАТІВ:')[1]?.trim().slice(0,3000)||'',
+      history: JSON.stringify(historyForGet).slice(0,500)
     });
     const res=await fetch(GEMINI_PROXY_URL + '?' + params.toString());
 
