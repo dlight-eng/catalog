@@ -1143,7 +1143,7 @@ mark{
 <div class="toast" id="toast"></div>
 
 <script>
-const API_URL   = 'https://script.google.com/macros/s/AKfycbxqJC9uKDvEUP6E6UXTIprHSlvp55ynr91Bz4EeZOuk2rWNKIatXCi8PvfWabOWBYlYDQ/exec';
+const API_URL   = 'https://script.google.com/macros/s/AKfycbz318VBUJgEQHdLz6Un9Rzen_ji3tUhvthXND1LkhIJYC_JhpPcGdp06y5NHpgCDUGP7A/exec';
 const PAGE_SIZE    = 50;
 const MAX_SEL_UNIQ = 200;
 const MAX_SEL_COLS = 14;
@@ -1979,11 +1979,18 @@ async function astSearch(){
       }
     };
 
-    const res=await fetch(GEMINI_PROXY_URL + '?action=gemini', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(body)
+    // Передаємо через GET параметри (Apps Script не підтримує CORS для POST)
+    const systemText = body.system_instruction.parts[0].text;
+    const queryText  = body.contents[body.contents.length-1].parts[0].text;
+    const historyForGet = body.contents.slice(0,-1);
+    
+    const params = new URLSearchParams({
+      action: 'gemini',
+      system: systemText,
+      q: queryText,
+      history: JSON.stringify(historyForGet)
     });
+    const res=await fetch(GEMINI_PROXY_URL + '?' + params.toString());
 
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data=await res.json();
@@ -2303,4 +2310,5 @@ init();
 </div>
 
 </body>
+<!-- v202606010902 -->
 </html>
