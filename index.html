@@ -1143,7 +1143,7 @@ mark{
 <div class="toast" id="toast"></div>
 
 <script>
-const API_URL   = 'https://script.google.com/macros/s/AKfycbyxHqaea3vbdmQh1ISjFiiM-HKwOKpvKH1q8_704dwwmyXI8rUiLmP-4maFcs_EgaI5hw/exec';
+const API_URL   = 'https://script.google.com/macros/s/AKfycbwO4BT6Bb-nMG8fFSiVhFlWJf59gsE643wIm6iQ7_kWarDkz8KkI6Rly-K91lO95yz-1g/exec';
 const PAGE_SIZE    = 50;
 const MAX_SEL_UNIQ = 200;
 const MAX_SEL_COLS = 14;
@@ -1991,11 +1991,12 @@ async function astSearch(){
       q: queryText.slice(0,500),
       h: lastHistory
     });
-    const res=await fetch(GEMINI_PROXY_URL + '?' + params.toString());
+    const res=await fetch(GEMINI_PROXY_URL + '?' + params.toString(), {redirect:'follow'});
 
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data=await res.json();
-    const aiText=data.candidates?.[0]?.content?.parts?.[0]?.text||'Не вдалось отримати відповідь';
+    if(data.error) throw new Error(data.error.message||JSON.stringify(data.error));
+    const aiText=(data.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('')||'Не вдалось отримати відповідь';
 
     // Додаємо відповідь AI в історію
     astHistory.push({ role:'model', parts:[{ text: aiText }] });
