@@ -1947,8 +1947,7 @@ async function astSearch(){
         .map(function(h){return h+': '+String(row[h]||'');})
         .join(' | ');
       return '['+(i+1)+'] '+fields;
-    }).join('
-');
+    }).join('\n');
 
     // Системний промпт
     const systemPrompt=[
