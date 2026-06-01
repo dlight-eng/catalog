@@ -1112,7 +1112,10 @@ mark{
         <div class="ast-hdr-sub">Підбір техніки за описом</div>
       </div>
     </div>
-    <button class="ast-close" onclick="toggleAst()">×</button>
+    <div style="display:flex;gap:.3rem">
+      <button onclick="astClear()" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;padding:.2rem .45rem;font-size:.62rem;color:rgba(255,255,255,.8);cursor:pointer;font-family:inherit" title="Очистити чат">↺ Новий чат</button>
+      <button class="ast-close" onclick="toggleAst()">×</button>
+    </div>
   </div>
   <div class="ast-hints" id="ast-hints">
     <div class="ast-hint" onclick="astHint(this)">самоскид з маніпулятором</div>
@@ -1778,6 +1781,13 @@ const NUM_FIELDS = {
   'м3':['місткість кузова'],
 };
 
+function astClear(){
+  astHistory=[];
+  const msgs=document.getElementById('ast-msgs');
+  msgs.innerHTML=`<div class="ast-msg bot"><div class="ast-bubble">Чат очищено. Опишіть яка техніка вам потрібна — я підберу найбільш підходящі позиції з каталогу.</div></div>`;
+  document.getElementById('ast-hints').style.display='flex';
+}
+
 function toggleAst(){
   const w=document.getElementById('ast-wrap');
   w.classList.toggle('open');
@@ -1897,94 +1907,173 @@ function tokenize(query){
     .filter(t=>t.length>=2 && !/^(що|для|або|та|чи|від|до|з|з|на|в|і|а|але|це|як|який|яка|яке|які|мені|нам|потрібен|потрібна|потрібно|треба|хочу|шукаю)$/i.test(t));
 }
 
+// ── GEMINI AI CONFIG ──
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const GEMINI_KEY = 'AQ.Ab8RN6K_ao88iSEZaLka6PwpAcpuA_5LJtUIurtT6umgltuFrQ';
+let astHistory = []; // історія діалогу
+
 async function astSearch(){
   const inp=document.getElementById('ast-inp');
   const query=inp.value.trim();
   if(!query) return;
   if(!allRows.length){ astAddMsg('bot','⏳ Зачекайте, каталог ще завантажується...'); return; }
 
-  // Ховаємо підказки
   document.getElementById('ast-hints').style.display='none';
-
-  // Показуємо запит користувача
   astAddMsg('user', esc(query));
   inp.value=''; inp.style.height='36px';
   document.getElementById('ast-send').disabled=true;
-
   astAddTyping();
 
-  // Невелика затримка для UX
-  await new Promise(r=>setTimeout(r,600));
-  astRemoveTyping();
+  try {
+    // Попередній локальний преселект — топ 20 кандидатів для AI
+    const tokens=tokenize(query);
+    const numFilters=parseNumFilters(query);
+    const allImgCols2=apiImageColumns.length>0?apiImageColumns:(imgCol?[imgCol]:[]);
+    const skipCols=new Set([...allImgCols2]);
 
-  const tokens=tokenize(query);
-  const numFilters=parseNumFilters(query);
+    let candidates=allRows
+      .map(row=>({ row, score:scoreRow(row, tokens, numFilters) }))
+      .sort((a,b)=>b.score-a.score)
+      .slice(0,20)
+      .map(x=>x.row);
 
-  // Скорінг всіх рядків
-  const scored=allRows
-    .map(row=>({ row, score:scoreRow(row, tokens, numFilters) }))
-    .filter(x=>x.score>0)
-    .sort((a,b)=>b.score-a.score)
-    .slice(0,5);
+    // Якщо нічого не знайшли локально — беремо перші 15
+    if(!candidates.length) candidates=allRows.slice(0,15);
 
-  if(!scored.length){
-    astAddMsg('bot','😕 Нічого не знайшов за вашим запитом. Спробуйте інші слова — наприклад, вкажіть тип техніки, шасі або характеристики.');
-    document.getElementById('ast-send').disabled=false;
-    return;
+    // Формуємо компактний каталог для AI
+    const catalogText=candidates.map((row,i)=>{
+      const fields=headers
+        .filter(h=>!skipCols.has(h)&&row[h]&&String(row[h]).trim())
+        .map(h=>`${h}: ${row[h]}`)
+        .join(' | ');
+      return `[${i+1}] ${fields}`;
+    }).join('
+');
+
+    // Системний промпт
+    const systemPrompt=`Ти — розумний асистент каталогу продукції компанії DLight (виробник комерційної техніки: самоскиди, маніпулятори, спецтехніка).
+
+Твоя задача — на основі запиту користувача підібрати найбільш підходящі позиції з каталогу і дати коротке пояснення.
+
+ПРАВИЛА:
+1. Відповідай ТІЛЬКИ українською мовою
+2. Аналізуй запит і вибирай 1-5 найбільш підходящих позицій
+3. Для кожної позиції вкажи її номер у дужках [N] і коротко поясни чому підходить
+4. Якщо запит нечіткий — уточни що саме шукає користувач (1-2 питання)
+5. Якщо нічого не підходить — чесно скажи і запропонуй змінити критерії
+6. Будь лаконічним: максимум 3-4 речення пояснення + список позицій
+7. Формат відповіді: спочатку коротке пояснення, потім список [N] Назва — чому підходить
+
+КАТАЛОГ КАНДИДАТІВ:
+${catalogText}`;
+
+    // Додаємо поточний запит в історію
+    astHistory.push({ role:'user', parts:[{ text: query }] });
+
+    const body={
+      system_instruction: { parts:[{ text: systemPrompt }] },
+      contents: astHistory,
+      generationConfig:{
+        temperature: 0.3,
+        maxOutputTokens: 800,
+        topP: 0.8,
+      }
+    };
+
+    const res=await fetch(GEMINI_URL, {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'X-goog-api-key': GEMINI_KEY
+      },
+      body:JSON.stringify(body)
+    });
+
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const aiText=data.candidates?.[0]?.content?.parts?.[0]?.text||'Не вдалось отримати відповідь';
+
+    // Додаємо відповідь AI в історію
+    astHistory.push({ role:'model', parts:[{ text: aiText }] });
+    // Обмежуємо історію — останні 10 повідомлень
+    if(astHistory.length>10) astHistory=astHistory.slice(-10);
+
+    astRemoveTyping();
+
+    // Парсимо які позиції вибрав AI [1], [2] тощо
+    const picked=[];
+    const re=/\[(\d+)\]/g; let m;
+    while((m=re.exec(aiText))!==null){
+      const idx=parseInt(m[1])-1;
+      if(idx>=0&&idx<candidates.length&&!picked.includes(idx)) picked.push(idx);
+    }
+
+    // Форматуємо текст відповіді — прибираємо [N] теги, робимо markdown простим
+    const formattedText=aiText
+      .replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')
+      .replace(/\*(.*?)\*/g,'<i>$1</i>')
+      .replace(/\[(\d+)\]/g,'<span style="background:var(--accentbg);color:var(--accent);border-radius:3px;padding:0 3px;font-weight:700;font-size:.7rem">[$1]</span>')
+      .replace(/
+/g,'<br>');
+
+    const msgDiv=astAddMsg('bot', formattedText);
+
+    // Додаємо картки знайдених позицій
+    if(picked.length){
+      const resWrap=document.createElement('div');
+      resWrap.className='ast-results';
+      picked.forEach(idx=>{
+        const row=candidates[idx];
+        const src=allImgCols2.map(c=>driveImgUrl(row[c])).find(v=>v&&isImg(v))||'';
+        const catC=selF[0]?.col;
+        const cat=catC&&row[catC]?row[catC]:'';
+        const kd=kdCol&&row[kdCol]?row[kdCol]:'';
+        const card=document.createElement('div');
+        card.className='ast-result-card';
+        card.innerHTML=`
+          ${src?`<img class="ast-result-img" src="${esc(src)}" onerror="this.style.display='none'">`:'<div class="ast-result-img" style="background:var(--surface3)"></div>'}
+          <div class="ast-result-info">
+            <div class="ast-result-name">${esc(row[nameCol]||'—')}</div>
+            <div class="ast-result-meta">${esc(cat)}${kd?' · '+esc(kd):''}</div>
+          </div>
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-left:auto;flex-shrink:0;color:var(--text3)"><path d="m9 18 6-6-6-6"/></svg>`;
+        card.onclick=()=>{ toggleAst(); openMo(row); };
+        resWrap.appendChild(card);
+      });
+      msgDiv.appendChild(resWrap);
+    }
+
+    document.getElementById('ast-msgs').scrollTop=document.getElementById('ast-msgs').scrollHeight;
+
+  } catch(err){
+    astRemoveTyping();
+    // Fallback на локальний пошук
+    const tokens=tokenize(query);
+    const numFilters=parseNumFilters(query);
+    const scored=allRows
+      .map(row=>({ row, score:scoreRow(row, tokens, numFilters) }))
+      .filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,5);
+
+    if(!scored.length){
+      astAddMsg('bot','😕 Нічого не знайшов. Спробуйте інші слова.');
+    } else {
+      const allImgCols2=apiImageColumns.length>0?apiImageColumns:(imgCol?[imgCol]:[]);
+      const msgDiv=astAddMsg('bot',`⚡ Знайшов <b>${scored.length}</b> позицій (локальний пошук):`);
+      const resWrap=document.createElement('div'); resWrap.className='ast-results';
+      scored.forEach(({row,score})=>{
+        const src=allImgCols2.map(c=>driveImgUrl(row[c])).find(v=>v&&isImg(v))||'';
+        const kd=kdCol&&row[kdCol]?row[kdCol]:'';
+        const card=document.createElement('div'); card.className='ast-result-card';
+        card.innerHTML=`${src?`<img class="ast-result-img" src="${esc(src)}" onerror="this.style.display='none'">`:''}<div class="ast-result-info"><div class="ast-result-name">${esc(row[nameCol]||'—')}</div><div class="ast-result-meta">${esc(kd)}</div></div>`;
+        card.onclick=()=>{ toggleAst(); openMo(row); };
+        resWrap.appendChild(card);
+      });
+      msgDiv.appendChild(resWrap);
+    }
   }
 
-  // Формуємо відповідь
-  const allImgCols2=apiImageColumns.length>0?apiImageColumns:(imgCol?[imgCol]:[]);
-  const catC=selF[0]?.col;
-
-  let bubbleHtml=`Знайшов <b>${scored.length}</b> підходящ${scored.length===1?'у позицію':'их позицій'}:<br><br>`;
-
-  // Пояснення чому знайшло
-  const matchedTerms=tokens.filter(t=>
-    scored.some(x=>{
-      const txt=Object.values(x.row).join(' ').toLowerCase();
-      return txt.includes(t)||(SYNONYMS[t]||[]).some(s=>txt.includes(s.toLowerCase()));
-    })
-  );
-  if(matchedTerms.length){
-    bubbleHtml+=`<span style="font-size:.7rem;color:var(--text3)">Збіги: ${matchedTerms.map(t=>`<b>${esc(t)}</b>`).join(', ')}</span>`;
-  }
-
-  const msgDiv=astAddMsg('bot', bubbleHtml);
-
-  // Картки результатів
-  const resWrap=document.createElement('div');
-  resWrap.className='ast-results';
-
-  scored.forEach(({row,score})=>{
-    const src=allImgCols2.map(c=>driveImgUrl(row[c])).find(v=>v&&isImg(v))||'';
-    const cat=catC&&row[catC]?row[catC]:'';
-    const kd=kdCol&&row[kdCol]?row[kdCol]:'';
-    const maxScore=scored[0].score;
-    const pct=Math.round((score/maxScore)*100);
-
-    const card=document.createElement('div');
-    card.className='ast-result-card';
-    card.innerHTML=`
-      ${src?`<img class="ast-result-img" src="${esc(src)}" onerror="this.style.display='none'">`:'<div class="ast-result-img" style="background:var(--surface3)"></div>'}
-      <div class="ast-result-info">
-        <div class="ast-result-name">${esc(row[nameCol]||'—')}</div>
-        <div class="ast-result-meta">${esc(cat)}${kd?' · '+esc(kd):''}</div>
-      </div>
-      <div class="ast-result-score">${pct}%</div>`;
-    card.onclick=()=>{ toggleAst(); openMo(row); };
-    resWrap.appendChild(card);
-  });
-
-  msgDiv.appendChild(resWrap);
-  document.getElementById('ast-msgs').scrollTop=document.getElementById('ast-msgs').scrollHeight;
   document.getElementById('ast-send').disabled=false;
-
-  // Лічильник на FAB
-  const badge=document.getElementById('ast-badge');
-  badge.textContent=scored.length;
-  badge.style.display='block';
-  setTimeout(()=>badge.style.display='none',3000);
+  document.getElementById('ast-msgs').scrollTop=document.getElementById('ast-msgs').scrollHeight;
 }
 
 // ── HIGHLIGHT ──
