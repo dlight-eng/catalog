@@ -1143,7 +1143,7 @@ mark{
 <div class="toast" id="toast"></div>
 
 <script>
-const API_URL   = 'https://script.google.com/macros/s/AKfycbyFotJ__6HFkhRIg7tEKAehmuwmWFEIgypGkmN0Irp9JhRRVNZmDPD9LkVFSqFAt0sbfw/exec';
+const API_URL   = 'https://script.google.com/macros/s/AKfycbzPUmVjIJvR6FCjsrMC21wSZWh0Ysh5eREM9DbPRSLwoexpGJPMmRzVTJ4QNn6xCh83sw/exec';
 const PAGE_SIZE    = 50;
 const MAX_SEL_UNIQ = 200;
 const MAX_SEL_COLS = 14;
@@ -1979,16 +1979,17 @@ async function astSearch(){
       }
     };
 
-    // GET через Apps Script — передаємо тільки запит і стислий каталог
+    // Передаємо тільки запит — каталог Apps Script читає сам з таблиці
     const queryText = body.contents[body.contents.length-1].parts[0].text;
-    const historyForGet = body.contents.slice(0,-1);
+    // Стисла історія — тільки останні 2 повідомлення, max 300 символів
+    const lastHistory = body.contents.slice(-3,-1)
+      .map(m => m.role+': '+m.parts[0].text.slice(0,100))
+      .join(' | ').slice(0,300);
     
-    // Беремо тільки системний промпт без каталогу — каталог Apps Script прочитає сам
     const params = new URLSearchParams({
       action: 'gemini',
-      q: queryText,
-      catalog: body.system_instruction.parts[0].text.split('КАТАЛОГ КАНДИДАТІВ:')[1]?.trim().slice(0,3000)||'',
-      history: JSON.stringify(historyForGet).slice(0,500)
+      q: queryText.slice(0,500),
+      h: lastHistory
     });
     const res=await fetch(GEMINI_PROXY_URL + '?' + params.toString());
 
