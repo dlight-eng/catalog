@@ -1143,7 +1143,7 @@ mark{
 <div class="toast" id="toast"></div>
 
 <script>
-const API_URL   = 'https://script.google.com/macros/s/AKfycby2ynexm-X0UNwUuRdthcbgpgFzj163MbMctQiBW8-z3fi7cajuSiSFvnYQlwkNwcsrNA/exec';
+const API_URL   = 'https://script.google.com/macros/s/AKfycbxqJC9uKDvEUP6E6UXTIprHSlvp55ynr91Bz4EeZOuk2rWNKIatXCi8PvfWabOWBYlYDQ/exec';
 const PAGE_SIZE    = 50;
 const MAX_SEL_UNIQ = 200;
 const MAX_SEL_COLS = 14;
@@ -1908,8 +1908,8 @@ function tokenize(query){
 }
 
 // ── GEMINI AI CONFIG ──
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-const GEMINI_KEY = 'AQ.Ab8RN6K_ao88iSEZaLka6PwpAcpuA_5LJtUIurtT6umgltuFrQ';
+// Gemini викликається через Apps Script proxy (ключ захований на сервері)
+const GEMINI_PROXY_URL = API_URL; // той самий Apps Script ендпоінт
 let astHistory = []; // історія діалогу
 
 async function astSearch(){
@@ -1980,12 +1980,9 @@ async function astSearch(){
       }
     };
 
-    const res=await fetch(GEMINI_URL, {
+    const res=await fetch(GEMINI_PROXY_URL + '?action=gemini', {
       method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'X-goog-api-key': GEMINI_KEY
-      },
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify(body)
     });
 
