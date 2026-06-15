@@ -712,6 +712,37 @@ mark{
 }
 .card-snippet mark{background:#fef08a}
 
+
+/* ── UNAVAILABLE OVERLAY ── */
+.card-unavail{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(2px);
+  display:flex;align-items:center;justify-content:center;
+  border-radius:var(--radius2) var(--radius2) 0 0;
+  z-index:3;
+}
+.card-unavail-lbl{
+  background:rgba(220,38,38,.92);color:#fff;
+  font-size:.62rem;font-weight:800;text-align:center;
+  padding:.35rem .6rem;border-radius:5px;
+  letter-spacing:.03em;line-height:1.35;
+  max-width:90%;
+}
+/* В модалці */
+.m-unavail{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(3px);
+  display:flex;align-items:center;justify-content:center;
+  z-index:5;border-radius:inherit;
+}
+.m-unavail-lbl{
+  background:rgba(220,38,38,.95);color:#fff;
+  font-size:.78rem;font-weight:800;text-align:center;
+  padding:.55rem 1rem;border-radius:7px;
+  letter-spacing:.02em;line-height:1.4;
+  max-width:85%;box-shadow:0 4px 16px rgba(0,0,0,.3);
+}
+
 /* ── COMPARE ── */
 .compare-bar{
   position:fixed;bottom:0;left:0;right:0;z-index:150;
@@ -1155,6 +1186,12 @@ let selV={}, gsQ='', sortCol=null, sortDir=1, view='grid', page=1;
 
 // ── UTILS ──
 const esc  = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function isUnavailable(row){
+  const descCol = headers.find(h=>/опис|характеристик|переваги/i.test(h));
+  if(!descCol) return false;
+  return /НА ДАНИЙ ЧАС ТАКИЙ ВИД ПРОДУКТ/i.test(String(row[descCol]||''));
+}
 const isUrl = v => /^https?:\/\//i.test(v);
 const isImg = v => /\.(jpg|jpeg|png|gif|webp|svg)/i.test(v)||/drive\.google|googleusercontent|lh\d\.google|\/file\/d\//i.test(v);
 
@@ -1378,9 +1415,13 @@ function renderGrid(pr){
     card.onclick=()=>openMo(row);
     const photos=allImgCols.map(c=>driveImgUrl(row[c])).filter(v=>v&&isImg(v));
     const src=photos[0]||'';
+    const unavail = isUnavailable(row);
+    const unavailOverlay = unavail
+      ? `<div class="card-unavail"><div class="card-unavail-lbl">⛔ Даний продукт<br>не можливо виготовити</div></div>`
+      : '';
     const imgH=src
-      ?`<div class="card-img"><img src="${esc(src)}" loading="lazy" onerror="this.parentElement.innerHTML='📦'">${photos.length>1?`<div class="card-img-count">📷 ${photos.length}</div>`:''}</div>`
-      :`<div class="card-img">📦</div>`;
+      ?`<div class="card-img"><img src="${esc(src)}" loading="lazy" onerror="this.parentElement.innerHTML='📦'">${photos.length>1?`<div class="card-img-count">📷 ${photos.length}</div>`:''} ${unavailOverlay}</div>`
+      :`<div class="card-img">📦${unavailOverlay}</div>`;
     const cat=catCol&&row[catCol]?`<div class="card-cat">${esc(row[catCol])}</div>`:'';
     const badges=badgeCols.filter(c=>row[c]).map(c=>`<span class="card-badge">${esc(row[c])}</span>`).join('');
     const snippet=gsQ?`<div class="card-snippet">${getSnippet(row,gsQ)}</div>`:'';
@@ -1463,7 +1504,11 @@ function openMo(row){
         </div>
       </div>`;
     }
-    photosHtml=`<div class="m-photos"><div class="m-main-img" style="flex:1">📦</div>${videoHtml0}${zagBlock0}</div>`;
+    const unavailRow0 = isUnavailable(row);
+    const unavailMo0 = unavailRow0
+      ? `<div class="m-unavail"><div class="m-unavail-lbl">⛔ Даний продукт<br>не можливо виготовити<br>на даний час</div></div>`
+      : '';
+    photosHtml=`<div class="m-photos"><div class="m-main-img" style="flex:1;position:relative">📦${unavailMo0}</div>${videoHtml0}${zagBlock0}</div>`;
   } else {
     const nav=moPhotos.length>1
       ?`<div class="m-photo-nav">
@@ -1529,8 +1574,14 @@ function openMo(row){
          </a>`
       : '';
 
+    // Перевірка недоступності
+    const unavailRow = isUnavailable(row);
+    const unavailMo = unavailRow
+      ? `<div class="m-unavail"><div class="m-unavail-lbl">⛔ Даний продукт<br>не можливо виготовити<br>на даний час</div></div>`
+      : '';
+
     photosHtml=`<div class="m-photos">
-      <div class="m-main-img" id="m-main"><img id="m-main-img" src="${esc(moPhotos[0])}" onerror="this.innerHTML='📦'" onclick="lbOpen(moPhotoIdx)" title="Клікніть для збільшення"></div>
+      <div class="m-main-img" id="m-main" style="position:relative"><img id="m-main-img" src="${esc(moPhotos[0])}" onerror="this.innerHTML='📦'" onclick="lbOpen(moPhotoIdx)" title="Клікніть для збільшення">${unavailMo}</div>
       ${nav}${thumbs}${videoHtml}${zagBlockHtml}${folderBtnHtml}
     </div>`;
   }
