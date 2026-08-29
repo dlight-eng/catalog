@@ -1492,10 +1492,10 @@ function renderGrid(pr){
       ? `<div class="card-img"><img src="${esc(src)}" loading="lazy" onerror="this.parentElement.innerHTML='${noImgHtml}'">${photos.length>1?`<div class="card-img-count">📷 ${photos.length}</div>`:''} ${badgesHtml}</div>`
       : `<div class="card-img">📦${badgesHtml}</div>`;
     const cat=catCol&&row[catCol]?`<div class="card-cat">${esc(row[catCol])}</div>`:'';
-    const badges=badgeCols.filter(c=>row[c]).map(c=>`<span class="card-badge">${esc(row[c])}</span>`).join('');
+    const metaBadges=badgeCols.filter(c=>row[c]).map(c=>`<span class="card-badge">${esc(row[c])}</span>`).join('');
     const snippet=gsQ?`<div class="card-snippet">${getSnippet(row,gsQ)}</div>`:'';
     const cardName=highlight(row[nameCol]??'—', gsQ);
-    card.innerHTML=imgH+`<div class="card-body">${cat}<div class="card-name">${cardName}</div>${snippet}${badges?`<div class="card-meta">${badges}</div>`:''}</div>`;
+    card.innerHTML=imgH+`<div class="card-body">${cat}<div class="card-name">${cardName}</div>${snippet}${metaBadges?`<div class="card-meta">${metaBadges}</div>`:''}</div>`;
     // Кнопка порівняння
     const cmpBtn=document.createElement('button');
     cmpBtn.className='card-compare-btn'+(isInCmp?' active':'');
