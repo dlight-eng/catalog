@@ -713,32 +713,63 @@ mark{
 .card-snippet mark{background:#fef08a}
 
 
-/* ── UNAVAILABLE BADGE ── */
-.card-unavail{
+/* ── STATUS BADGES ── */
+.card-badges{
   position:absolute;top:.4rem;right:.4rem;
   z-index:4;pointer-events:none;
+  display:flex;flex-direction:column;gap:.25rem;align-items:flex-end;
 }
-.card-unavail-lbl{
-  background:rgba(220,38,38,.95);color:#fff;
+.card-badge-item{
   font-size:.58rem;font-weight:800;text-align:center;
-  padding:.25rem .45rem;border-radius:4px;
+  padding:.22rem .45rem;border-radius:4px;
   letter-spacing:.02em;line-height:1.3;
-  box-shadow:0 2px 8px rgba(0,0,0,.3);
-  white-space:nowrap;
+  box-shadow:0 2px 8px rgba(0,0,0,.25);
+  white-space:nowrap;color:#fff;
 }
-/* В модалці */
-.m-unavail{
+.badge-unavail { background:rgba(220,38,38,.95) }
+.badge-bonus   { background:rgba(22,163,74,.95) }
+.badge-sale    { background:rgba(202,138,4,.95);color:#fff }
+
+/* Рамка картки */
+.card.has-unavail { border-color:rgba(220,38,38,.5) }
+.card.has-bonus   { border-color:rgba(22,163,74,.5) }
+.card.has-sale    { border-color:rgba(202,138,4,.5) }
+.card.has-unavail:hover { box-shadow:0 0 0 1px rgba(220,38,38,.7),0 8px 24px rgba(220,38,38,.12) }
+.card.has-bonus:hover   { box-shadow:0 0 0 1px rgba(22,163,74,.7),0 8px 24px rgba(22,163,74,.12) }
+.card.has-sale:hover    { box-shadow:0 0 0 1px rgba(202,138,4,.7),0 8px 24px rgba(202,138,4,.12) }
+
+/* Модалка */
+.m-badges{
   position:absolute;top:.5rem;right:.5rem;
   z-index:6;pointer-events:none;
+  display:flex;flex-direction:column;gap:.3rem;align-items:flex-end;
 }
-.m-unavail-lbl{
-  background:rgba(220,38,38,.95);color:#fff;
-  font-size:.72rem;font-weight:800;text-align:center;
-  padding:.35rem .7rem;border-radius:6px;
-  letter-spacing:.02em;line-height:1.35;
-  box-shadow:0 3px 12px rgba(0,0,0,.3);
+.m-badge-item{
+  font-size:.7rem;font-weight:800;
+  padding:.3rem .65rem;border-radius:6px;
+  box-shadow:0 3px 12px rgba(0,0,0,.25);
+  white-space:nowrap;color:#fff;
+}
+
+/* Фільтр-чіпи статусів */
+.status-filter-row{
+  display:flex;flex-wrap:wrap;gap:.35rem;
+  padding:.55rem 1.5rem;
+  background:var(--surface);border-bottom:1px solid var(--border);
+}
+.status-chip{
+  display:inline-flex;align-items:center;gap:.3rem;
+  border-radius:20px;padding:.22rem .65rem;
+  font-size:.7rem;font-weight:700;cursor:pointer;
+  border:2px solid transparent;transition:all .15s;
   white-space:nowrap;
 }
+.status-chip.unavail{ background:rgba(220,38,38,.1);color:#dc2626;border-color:rgba(220,38,38,.2) }
+.status-chip.bonus  { background:rgba(22,163,74,.1);color:#16a34a;border-color:rgba(22,163,74,.2) }
+.status-chip.sale   { background:rgba(202,138,4,.1);color:#ca8a04;border-color:rgba(202,138,4,.2) }
+.status-chip.unavail.on{ background:#dc2626;color:#fff;border-color:#dc2626 }
+.status-chip.bonus.on  { background:#16a34a;color:#fff;border-color:#16a34a }
+.status-chip.sale.on   { background:#ca8a04;color:#fff;border-color:#ca8a04 }
 
 /* ── COMPARE ── */
 .compare-bar{
@@ -1082,6 +1113,14 @@ mark{
   </div>
 </div>
 
+<!-- STATUS FILTERS -->
+<div class="status-filter-row" id="status-filter-row">
+  <span style="font-size:.68rem;font-weight:700;color:var(--text3);align-self:center;margin-right:.2rem">Статус:</span>
+  <div class="status-chip unavail" id="sf-unavail" onclick="toggleStatusFilter('unavail')">⛔ Не виготовляється</div>
+  <div class="status-chip bonus"   id="sf-bonus"   onclick="toggleStatusFilter('bonus')">🟢 Бонус для менеджера</div>
+  <div class="status-chip sale"    id="sf-sale"    onclick="toggleStatusFilter('sale')">🟡 Акція</div>
+</div>
+
 <div class="tw" id="tw" style="display:none"></div>
 <div class="gw" id="gw"><div class="cards" id="cards"></div></div>
 <div class="pag" id="pag"></div>
@@ -1184,10 +1223,29 @@ let selV={}, gsQ='', sortCol=null, sortDir=1, view='grid', page=1;
 // ── UTILS ──
 const esc  = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-function isUnavailable(row){
-  const descCol = headers.find(h=>/опис|характеристик|переваги/i.test(h));
-  if(!descCol) return false;
-  return /НА ДАНИЙ ЧАС ТАКИЙ ВИД ПРОДУКТ/i.test(String(row[descCol]||''));
+// ── STATUS HELPERS ──
+function getRowStatus(row){
+  // Шукаємо в усіх текстових полях
+  const allText = headers
+    .filter(h=>!apiImageColumns.includes(h))
+    .map(h=>String(row[h]||''))
+    .join(' ');
+  return {
+    unavail: /НА ДАНИЙ ЧАС ТАКИЙ ВИД ПРОДУКТ|НЕ МОЖЛИВО ВИГОТОВЛЯТИ/i.test(allText),
+    bonus:   /БОНУС ДЛЯ МЕНЕДЖЕРА/i.test(allText),
+    sale:    /АКЦІЯ!!!|АКЦІЯ!!/i.test(allText),
+  };
+}
+function isUnavailable(row){ return getRowStatus(row).unavail; }
+
+// Фільтр по статусах
+let activeStatusFilters = new Set();
+
+function toggleStatusFilter(type){
+  if(activeStatusFilters.has(type)) activeStatusFilters.delete(type);
+  else activeStatusFilters.add(type);
+  document.getElementById('sf-'+type).classList.toggle('on', activeStatusFilters.has(type));
+  page=1; render();
 }
 const isUrl = v => /^https?:\/\//i.test(v);
 const isImg = v => /\.(jpg|jpeg|png|gif|webp|svg)/i.test(v)||/drive\.google|googleusercontent|lh\d\.google|\/file\/d\//i.test(v);
@@ -1309,6 +1367,15 @@ function filtered(){
       const q=gsQ.toLowerCase();
       if(!Object.values(row).some(v=>String(v||'').toLowerCase().includes(q))) return false;
     }
+    // Фільтр по статусах
+    if(activeStatusFilters.size>0){
+      const st=getRowStatus(row);
+      let match=false;
+      if(activeStatusFilters.has('unavail')&&st.unavail) match=true;
+      if(activeStatusFilters.has('bonus')&&st.bonus) match=true;
+      if(activeStatusFilters.has('sale')&&st.sale) match=true;
+      if(!match) return false;
+    }
     return true;
   });
 }
@@ -1412,13 +1479,17 @@ function renderGrid(pr){
     card.onclick=()=>openMo(row);
     const photos=allImgCols.map(c=>driveImgUrl(row[c])).filter(v=>v&&isImg(v));
     const src=photos[0]||'';
-    const unavail = isUnavailable(row);
-    const unavailOverlay = unavail
-      ? `<div class="card-unavail"><div class="card-unavail-lbl">⛔ Даний продукт<br>не можливо виготовити</div></div>`
-      : '';
+    const st = getRowStatus(row);
+    const badges = [
+      st.unavail ? '<div class="card-badge-item badge-unavail">⛔ Не виготовляється</div>' : '',
+      st.bonus   ? '<div class="card-badge-item badge-bonus">🎁 Бонус менеджеру</div>' : '',
+      st.sale    ? '<div class="card-badge-item badge-sale">🔥 Акція</div>' : '',
+    ].filter(Boolean).join('');
+    const badgesHtml = badges ? '<div class="card-badges">'+badges+'</div>' : '';
+    const cardClasses = ['card', st.unavail?'has-unavail':'', st.bonus?'has-bonus':'', st.sale?'has-sale':''].filter(Boolean).join(' ');
     const imgH=src
-      ?`<div class="card-img"><img src="${esc(src)}" loading="lazy" onerror="this.parentElement.innerHTML='📦'">${photos.length>1?`<div class="card-img-count">📷 ${photos.length}</div>`:''} ${unavailOverlay}</div>`
-      :`<div class="card-img">📦${unavailOverlay}</div>`;
+      ?'<div class="card-img"><img src="'+esc(src)+'" loading="lazy" onerror="this.parentElement.innerHTML='📦'">'+(photos.length>1?'<div class="card-img-count">📷 '+photos.length+'</div>':'')+badgesHtml+'</div>'
+      :'<div class="card-img">📦'+badgesHtml+'</div>';
     const cat=catCol&&row[catCol]?`<div class="card-cat">${esc(row[catCol])}</div>`:'';
     const badges=badgeCols.filter(c=>row[c]).map(c=>`<span class="card-badge">${esc(row[c])}</span>`).join('');
     const snippet=gsQ?`<div class="card-snippet">${getSnippet(row,gsQ)}</div>`:'';
