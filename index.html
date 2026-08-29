@@ -1210,7 +1210,7 @@ mark{
 <div class="toast" id="toast"></div>
 
 <script>
-const API_URL   = 'https://script.google.com/macros/s/AKfycbw6x0p8A21VVn-7Fsgy73HrIlFKIljSECeVGNg9GmPSE0L02zF38D8mkwiPST8FH-Jbsw/exec';
+const API_URL   = 'https://script.google.com/macros/s/AKfycbzmMzi7UKy4Vwq8qpDHfCS8uM27ag8nU_l5tvwCZQiaUkCPwMRIFA24eC8K0eLVnXo98g/exec';
 const PAGE_SIZE    = 50;
 const MAX_SEL_UNIQ = 200;
 const MAX_SEL_COLS = 14;
@@ -1472,7 +1472,7 @@ function renderGrid(pr){
   const badgeCols=selF.slice(1,4).map(f=>f.col).filter(c=>c!==nameCol&&c!==catCol);
   g.innerHTML='';
   pr.forEach(row=>{
-    const card=document.createElement('div'); card.className='card';
+    const card=document.createElement('div');
     card.style.position='relative';
     const rowKey=row[kdCol]||row[nameCol]||JSON.stringify(row).slice(0,40);
     const isInCmp=compareItems.some(r=>(r[kdCol]||r[nameCol])===rowKey);
@@ -1487,10 +1487,10 @@ function renderGrid(pr){
     ].filter(Boolean).join('');
     const badgesHtml = statusBadges ? '<div class="card-badges">'+statusBadges+'</div>' : '';
     const cardClasses = ['card', st.unavail?'has-unavail':'', st.bonus?'has-bonus':'', st.sale?'has-sale':''].filter(Boolean).join(' ');
-    const noImgHtml = '📦';
+    card.className = cardClasses;
     const imgH=src
-      ? `<div class="card-img"><img src="${esc(src)}" loading="lazy" onerror="this.parentElement.innerHTML='${noImgHtml}'">${photos.length>1?`<div class="card-img-count">📷 ${photos.length}</div>`:''} ${badgesHtml}</div>`
-      : `<div class="card-img">📦${badgesHtml}</div>`;
+      ? '<div class="card-img"><img src="'+esc(src)+'" loading="lazy" onerror="this.parentElement.innerHTML='&amp;#128230;'">'+(photos.length>1?'<div class="card-img-count">📷 '+photos.length+'</div>':'')+badgesHtml+'</div>'
+      : '<div class="card-img">📦'+badgesHtml+'</div>';
     const cat=catCol&&row[catCol]?`<div class="card-cat">${esc(row[catCol])}</div>`:'';
     const metaBadges=badgeCols.filter(c=>row[c]).map(c=>`<span class="card-badge">${esc(row[c])}</span>`).join('');
     const snippet=gsQ?`<div class="card-snippet">${getSnippet(row,gsQ)}</div>`:'';
