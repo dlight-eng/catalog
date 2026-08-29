@@ -985,6 +985,7 @@ mark{
     <div class="hdr-subtitle">Каталог техніки · 2025</div>
   </div>
   <div class="hdr-right">
+    <button onclick="sessionStorage.removeItem(CACHE_KEY);location.reload()" title="Оновити дані з таблиці" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:.25rem .55rem;cursor:pointer;font-size:.7rem;color:var(--text3);font-family:inherit;transition:all .15s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.08)'">🔄 Оновити</button>
     <div class="hdr-stat">
       <div class="hdr-stat-num" id="total-count">—</div>
       <div class="hdr-stat-lbl">позицій</div>
@@ -1210,7 +1211,7 @@ mark{
 <div class="toast" id="toast"></div>
 
 <script>
-const API_URL   = 'https://script.google.com/macros/s/AKfycbzmMzi7UKy4Vwq8qpDHfCS8uM27ag8nU_l5tvwCZQiaUkCPwMRIFA24eC8K0eLVnXo98g/exec';
+const API_URL   = 'https://script.google.com/macros/s/AKfycbwuIZI4N-8nTyoaQKw_pjRQj9iOavclqyr9fFh6sO8dPiQnvTTzlYZcZPRsarm7WG1mMg/exec';
 const PAGE_SIZE    = 50;
 const MAX_SEL_UNIQ = 200;
 const MAX_SEL_COLS = 14;
@@ -1472,6 +1473,7 @@ function renderGrid(pr){
   const badgeCols=selF.slice(1,4).map(f=>f.col).filter(c=>c!==nameCol&&c!==catCol);
   g.innerHTML='';
   pr.forEach(row=>{
+    try {
     const card=document.createElement('div');
     card.style.position='relative';
     const rowKey=row[kdCol]||row[nameCol]||JSON.stringify(row).slice(0,40);
@@ -1505,6 +1507,15 @@ function renderGrid(pr){
     cmpBtn.onclick=e=>{ e.stopPropagation(); toggleCompare(row, cmpBtn); };
     card.appendChild(cmpBtn);
     g.appendChild(card);
+    } catch(cardErr){
+      // Error boundary — якщо одна картка ламається, решта працюють
+      console.warn('Card render error:', cardErr, row);
+      const errCard = document.createElement('div');
+      errCard.className = 'card';
+      errCard.style.cssText = 'opacity:.4;pointer-events:none';
+      errCard.innerHTML = '<div class="card-img" style="font-size:1.5rem">⚠️</div><div class="card-body"><div class="card-name" style="font-size:.7rem;color:var(--text3)">Помилка відображення</div></div>';
+      g.appendChild(errCard);
+    }
   });
 }
 
@@ -2514,8 +2525,41 @@ function toggleBanner(){
   document.getElementById('info-banner').classList.toggle('open');
 }
 
+const CACHE_KEY = 'dlight_catalog_v2';
+const CACHE_TTL  = 5 * 60 * 1000; // 5 хвилин
+
+function loadFromCache(){
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if(!raw) return null;
+    const { data, ts } = JSON.parse(raw);
+    if(Date.now() - ts > CACHE_TTL) return null;
+    return data;
+  } catch(e){ return null; }
+}
+
+function saveToCache(data){
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
+  } catch(e){}
+}
+
 async function init(){
   try{
+    // Спочатку перевіряємо кеш браузера
+    const cached = loadFromCache();
+    if(cached){
+      headers=cached.headers; allRows=cached.rows; apiImageColumns=cached.imageColumns||[];
+      document.getElementById('total-count').textContent=cached.total;
+      if(cached.updatedAt){
+        const d=new Date(cached.updatedAt);
+        document.getElementById('hdr-updated').textContent='Оновлено: '+d.toLocaleString('uk-UA',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+' (кеш)';
+      }
+      detectCols(); buildFilters(); render(); renderTags();
+      toast('⚡ Завантажено з кешу ('+cached.total+' позицій)');
+      return;
+    }
+
     toast('⏳ Завантаження…',15000);
     const res=await fetch(API_URL);
     if(!res.ok) throw new Error('HTTP '+res.status);
@@ -2527,11 +2571,12 @@ async function init(){
       const d=new Date(data.updatedAt);
       document.getElementById('hdr-updated').textContent='Оновлено: '+d.toLocaleString('uk-UA',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
     }
+    saveToCache(data);
     detectCols(); buildFilters(); render(); renderTags();
     toast('✓ Завантажено '+data.total+' позицій');
   }catch(err){
     document.getElementById('fp-grid').innerHTML='';
-    document.getElementById('tw').innerHTML=`<div class="st">⚠️<div style="font-weight:600">Помилка завантаження</div><div style="font-size:.74rem">${esc(err.message)}</div></div>`;
+    document.getElementById('tw').innerHTML=`<div class="st">⚠️<div style="font-weight:600">Помилка завантаження</div><div style="font-size:.74rem">${esc(err.message)}</div><button onclick="sessionStorage.removeItem('${CACHE_KEY}');location.reload()" style="margin-top:.5rem;padding:.3rem .7rem;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-family:inherit;font-size:.72rem;background:none">🔄 Спробувати знову</button></div>`;
     document.getElementById('ri').textContent='Помилка';
     console.error(err);
   }
