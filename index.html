@@ -1480,12 +1480,12 @@ function renderGrid(pr){
     const photos=allImgCols.map(c=>driveImgUrl(row[c])).filter(v=>v&&isImg(v));
     const src=photos[0]||'';
     const st = getRowStatus(row);
-    const badges = [
+    const statusBadges = [
       st.unavail ? '<div class="card-badge-item badge-unavail">⛔ Не виготовляється</div>' : '',
       st.bonus   ? '<div class="card-badge-item badge-bonus">🎁 Бонус менеджеру</div>' : '',
       st.sale    ? '<div class="card-badge-item badge-sale">🔥 Акція</div>' : '',
     ].filter(Boolean).join('');
-    const badgesHtml = badges ? '<div class="card-badges">'+badges+'</div>' : '';
+    const badgesHtml = statusBadges ? '<div class="card-badges">'+statusBadges+'</div>' : '';
     const cardClasses = ['card', st.unavail?'has-unavail':'', st.bonus?'has-bonus':'', st.sale?'has-sale':''].filter(Boolean).join(' ');
     const noImgHtml = '📦';
     const imgH=src
