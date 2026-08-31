@@ -1506,7 +1506,7 @@ function renderGrid(pr){
       ? '<div class="card-img"><img src="'+esc(src)+'" loading="lazy">'+imgCount+badgesHtml+'</div>'
       : '<div class="card-img">'+badgesHtml+'</div>';
     const cat=catCol&&row[catCol]?`<div class="card-cat">${esc(row[catCol])}</div>`:'';
-    const massColCard=headers.find(h=>/маса\s*виробу|маса\s*кузов|вага\s*виробу/i.test(h));
+    const massColCard=headers.find(h=>/маса|вага.*виробу|weight/i.test(h));
     const massCard=massColCard&&row[massColCard]?`<span class="card-badge" title="Маса виробу">⚖ ${esc(String(row[massColCard]).trim())} кг</span>`:'';
     const metaBadges=badgeCols.filter(c=>row[c]).map(c=>`<span class="card-badge">${esc(row[c])}</span>`).join('')+massCard;
     const snippet=gsQ?`<div class="card-snippet">${getSnippet(row,gsQ)}</div>`:'';
@@ -1559,8 +1559,9 @@ function openMo(row){
   const cat=catCol&&row[catCol]?`<div class="m-cat-lbl">${esc(row[catCol])}</div>`:'';
   const copyKdBtn=kd?`<button class="m-copy-kd" id="m-kd-btn" onclick="copyMoKD()">⎘ ${esc(kd)}</button>`:'';
   // Маса виробу
-  const massCol=headers.find(h=>/маса.виробу|вага.виробу/i.test(h));
+  const massCol=headers.find(h=>/маса|вага.*виробу|weight/i.test(h));
   const massVal=massCol&&row[massCol]?String(row[massCol]).trim():'';
+  if(!massCol) console.warn('Колонка маси не знайдена. Доступні:', headers.filter(h=>/мас|вага|weight/i.test(h)));
   const massBadge=massVal?'<div class="m-mass-badge">⚖ '+esc(massVal)+' кг</div>':'';
 
   // Кнопка порівняння в шапці
