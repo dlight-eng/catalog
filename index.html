@@ -771,6 +771,17 @@ mark{
 .status-chip.bonus.on  { background:#16a34a;color:#fff;border-color:#16a34a }
 .status-chip.sale.on   { background:#ca8a04;color:#fff;border-color:#ca8a04 }
 
+
+/* ── MASS BADGE ── */
+.m-mass-badge{
+  display:inline-flex;align-items:center;gap:.25rem;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:6px;padding:.2rem .55rem;
+  font-size:.68rem;font-weight:700;color:var(--text2);
+  white-space:nowrap;
+}
+.m-mass-badge svg{color:var(--text3);flex-shrink:0}
+
 /* ── COMPARE ── */
 .compare-bar{
   position:fixed;bottom:0;left:0;right:0;z-index:150;
@@ -1495,7 +1506,9 @@ function renderGrid(pr){
       ? '<div class="card-img"><img src="'+esc(src)+'" loading="lazy">'+imgCount+badgesHtml+'</div>'
       : '<div class="card-img">'+badgesHtml+'</div>';
     const cat=catCol&&row[catCol]?`<div class="card-cat">${esc(row[catCol])}</div>`:'';
-    const metaBadges=badgeCols.filter(c=>row[c]).map(c=>`<span class="card-badge">${esc(row[c])}</span>`).join('');
+    const massColCard=headers.find(h=>/маса\s*виробу|маса\s*кузов|вага\s*виробу/i.test(h));
+    const massCard=massColCard&&row[massColCard]?`<span class="card-badge" title="Маса виробу">⚖ ${esc(String(row[massColCard]).trim())} кг</span>`:'';
+    const metaBadges=badgeCols.filter(c=>row[c]).map(c=>`<span class="card-badge">${esc(row[c])}</span>`).join('')+massCard;
     const snippet=gsQ?`<div class="card-snippet">${getSnippet(row,gsQ)}</div>`:'';
     const cardName=highlight(row[nameCol]??'—', gsQ);
     card.innerHTML=imgH+`<div class="card-body">${cat}<div class="card-name">${cardName}</div>${snippet}${metaBadges?`<div class="card-meta">${metaBadges}</div>`:''}</div>`;
@@ -1545,6 +1558,11 @@ function openMo(row){
   const kd=kdCol&&row[kdCol]?row[kdCol]:'';
   const cat=catCol&&row[catCol]?`<div class="m-cat-lbl">${esc(row[catCol])}</div>`:'';
   const copyKdBtn=kd?`<button class="m-copy-kd" id="m-kd-btn" onclick="copyMoKD()">⎘ ${esc(kd)}</button>`:'';
+  // Маса виробу
+  const massCol=headers.find(h=>/маса.виробу|вага.виробу/i.test(h));
+  const massVal=massCol&&row[massCol]?String(row[massCol]).trim():'';
+  const massBadge=massVal?'<div class="m-mass-badge">⚖ '+esc(massVal)+' кг</div>':'';
+
   // Кнопка порівняння в шапці
   const rowKey2 = row[kdCol]||row[nameCol]||'';
   const isInCmp2 = compareItems.some(r=>(r[kdCol]||r[nameCol])===rowKey2);
@@ -1552,7 +1570,7 @@ function openMo(row){
     ${isInCmp2?'✓ У порівнянні':'⚖ Порівняти'}
   </button>`;
   document.getElementById('m-hdr').innerHTML=
-    `<div class="m-hdr-left">${cat}<div class="m-title">${esc(row[nameCol]??'—')}</div></div>
+    `<div class="m-hdr-left">${cat}<div class="m-title">${esc(row[nameCol]??'—')}</div>${massBadge?'<div style="margin-top:.3rem">'+massBadge+'</div>':''}</div>
      <div class="m-hdr-right">${cmpBtnHtml}${copyKdBtn}<button class="mcl" onclick="closeMo()">×</button></div>`;
   // Зберігаємо поточний рядок для кнопки порівняння
   document.getElementById('mo')._row = row;
