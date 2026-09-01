@@ -799,6 +799,8 @@ mark{
 .status-chip.bonus  { background:rgba(202,138,4,.1);color:#b45309;border-color:rgba(202,138,4,.2) }
 .status-chip.sale   { background:rgba(22,163,74,.1);color:#16a34a;border-color:rgba(22,163,74,.2) }
 .status-chip.unavail.on{ background:#dc2626;color:#fff;border-color:#dc2626 }
+.status-chip.archive{ background:rgba(220,38,38,.1);color:#dc2626;border-color:rgba(220,38,38,.2) }
+.status-chip.archive.on{ background:#dc2626;color:#fff;border-color:#dc2626 }
 .status-chip.archive.on{ background:#dc2626;color:#fff;border-color:#dc2626 }
 .status-chip.bonus.on  { background:#ca8a04;color:#fff;border-color:#ca8a04 }
 .status-chip.sale.on   { background:#16a34a;color:#fff;border-color:#16a34a }
@@ -1195,6 +1197,7 @@ mark{
 <div class="status-filter-row" id="status-filter-row">
   <span style="font-size:.68rem;font-weight:700;color:var(--text3);align-self:center;margin-right:.2rem">Статус:</span>
   <div class="status-chip unavail" id="sf-unavail" onclick="toggleStatusFilter('unavail')">⛔ Не виготовляється</div>
+  <div class="status-chip archive" id="sf-archive" onclick="toggleStatusFilter('archive')">🗄 Архів</div>
   <div class="status-chip bonus"   id="sf-bonus"   onclick="toggleStatusFilter('bonus')">🟢 Бонус для менеджера</div>
   <div class="status-chip sale"    id="sf-sale"    onclick="toggleStatusFilter('sale')">🟡 Акція</div>
 </div>
