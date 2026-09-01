@@ -716,7 +716,7 @@ mark{
 /* ── STATUS BADGES ── */
 .card-badges{
   position:absolute;top:.4rem;right:.4rem;
-  z-index:4;pointer-events:none;
+  z-index:4;
   display:flex;flex-direction:column;gap:.25rem;align-items:flex-end;
 }
 .card-badge-item{
@@ -725,23 +725,37 @@ mark{
   letter-spacing:.02em;line-height:1.3;
   box-shadow:0 2px 8px rgba(0,0,0,.25);
   white-space:nowrap;color:#fff;
+  position:relative;cursor:default;
 }
-.badge-unavail { background:rgba(220,38,38,.95) }
-.badge-bonus   { background:rgba(22,163,74,.95) }
-.badge-sale    { background:rgba(202,138,4,.95);color:#fff }
+/* Tooltip для бейджів */
+.card-badge-item .badge-tooltip{
+  display:none;
+  position:absolute;top:calc(100% + 6px);right:0;
+  background:var(--text);color:#fff;
+  font-size:.65rem;font-weight:500;line-height:1.4;
+  padding:.4rem .6rem;border-radius:6px;
+  white-space:normal;min-width:160px;max-width:220px;text-align:left;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:10;
+  pointer-events:none;
+}
+.card-badge-item:hover .badge-tooltip{ display:block }
+
+.badge-unavail { background:rgba(220,38,38,.95);pointer-events:none }
+.badge-bonus   { background:rgba(202,138,4,.95);cursor:help }
+.badge-sale    { background:rgba(22,163,74,.95);cursor:help }
 
 /* Рамка картки */
 .card.has-unavail { border-color:rgba(220,38,38,.5) }
-.card.has-bonus   { border-color:rgba(22,163,74,.5) }
-.card.has-sale    { border-color:rgba(202,138,4,.5) }
+.card.has-bonus   { border-color:rgba(202,138,4,.5) }
+.card.has-sale    { border-color:rgba(22,163,74,.5) }
 .card.has-unavail:hover { box-shadow:0 0 0 1px rgba(220,38,38,.7),0 8px 24px rgba(220,38,38,.12) }
-.card.has-bonus:hover   { box-shadow:0 0 0 1px rgba(22,163,74,.7),0 8px 24px rgba(22,163,74,.12) }
-.card.has-sale:hover    { box-shadow:0 0 0 1px rgba(202,138,4,.7),0 8px 24px rgba(202,138,4,.12) }
+.card.has-bonus:hover   { box-shadow:0 0 0 1px rgba(202,138,4,.7),0 8px 24px rgba(202,138,4,.12) }
+.card.has-sale:hover    { box-shadow:0 0 0 1px rgba(22,163,74,.7),0 8px 24px rgba(22,163,74,.12) }
 
-/* Модалка */
+/* Модалка — статус блок */
 .m-badges{
   position:absolute;top:.5rem;right:.5rem;
-  z-index:6;pointer-events:none;
+  z-index:6;
   display:flex;flex-direction:column;gap:.3rem;align-items:flex-end;
 }
 .m-badge-item{
@@ -750,6 +764,20 @@ mark{
   box-shadow:0 3px 12px rgba(0,0,0,.25);
   white-space:nowrap;color:#fff;
 }
+/* Блок статусу в шапці модалки */
+.m-status-block{
+  margin-top:.4rem;
+  display:flex;flex-direction:column;gap:.3rem;
+}
+.m-status-item{
+  display:inline-flex;align-items:flex-start;gap:.4rem;
+  padding:.35rem .6rem;border-radius:7px;
+  font-size:.75rem;font-weight:600;line-height:1.4;
+  max-width:100%;
+}
+.m-status-item.unavail{ background:rgba(220,38,38,.1);color:#dc2626;border:1px solid rgba(220,38,38,.2) }
+.m-status-item.bonus  { background:rgba(202,138,4,.1);color:#b45309;border:1px solid rgba(202,138,4,.2) }
+.m-status-item.sale   { background:rgba(22,163,74,.1);color:#16a34a;border:1px solid rgba(22,163,74,.2) }
 
 /* Фільтр-чіпи статусів */
 .status-filter-row{
@@ -761,15 +789,14 @@ mark{
   display:inline-flex;align-items:center;gap:.3rem;
   border-radius:20px;padding:.22rem .65rem;
   font-size:.7rem;font-weight:700;cursor:pointer;
-  border:2px solid transparent;transition:all .15s;
-  white-space:nowrap;
+  border:2px solid transparent;transition:all .15s;white-space:nowrap;
 }
 .status-chip.unavail{ background:rgba(220,38,38,.1);color:#dc2626;border-color:rgba(220,38,38,.2) }
-.status-chip.bonus  { background:rgba(22,163,74,.1);color:#16a34a;border-color:rgba(22,163,74,.2) }
-.status-chip.sale   { background:rgba(202,138,4,.1);color:#ca8a04;border-color:rgba(202,138,4,.2) }
+.status-chip.bonus  { background:rgba(202,138,4,.1);color:#b45309;border-color:rgba(202,138,4,.2) }
+.status-chip.sale   { background:rgba(22,163,74,.1);color:#16a34a;border-color:rgba(22,163,74,.2) }
 .status-chip.unavail.on{ background:#dc2626;color:#fff;border-color:#dc2626 }
-.status-chip.bonus.on  { background:#16a34a;color:#fff;border-color:#16a34a }
-.status-chip.sale.on   { background:#ca8a04;color:#fff;border-color:#ca8a04 }
+.status-chip.bonus.on  { background:#ca8a04;color:#fff;border-color:#ca8a04 }
+.status-chip.sale.on   { background:#16a34a;color:#fff;border-color:#16a34a }
 
 
 /* ── MASS BADGE ── */
@@ -1236,16 +1263,32 @@ let selV={}, gsQ='', sortCol=null, sortDir=1, view='grid', page=1;
 const esc  = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 // ── STATUS HELPERS ──
+// Знаходимо колонку "Статус"
+function getStatusCol(){
+  return headers.find(h=>/^статус$/i.test(h.trim()));
+}
+
 function getRowStatus(row){
-  // Шукаємо в усіх текстових полях
-  const allText = headers
-    .filter(h=>!apiImageColumns.includes(h))
-    .map(h=>String(row[h]||''))
-    .join(' ');
+  const statusCol = getStatusCol();
+  const statusVal = statusCol ? String(row[statusCol]||'').trim() : '';
+
+  // Також перевіряємо старий спосіб (з тексту опису) як fallback
+  const descCol = headers.find(h=>/опис|характеристик|переваги/i.test(h));
+  const descText = descCol ? String(row[descCol]||'') : '';
+
+  // Визначаємо тип статусу
+  const isUnavailStatus = /не.виготовля|не.виробля|знятий|зупинено/i.test(statusVal);
+  const isBonusStatus   = /бонус/i.test(statusVal);
+  const isSaleStatus    = /акці/i.test(statusVal);
+
+  // Fallback на опис
+  const isUnavailDesc = /НА ДАНИЙ ЧАС ТАКИЙ ВИД ПРОДУКТ|НЕ МОЖЛИВО ВИГОТОВЛЯТИ/i.test(descText);
+
   return {
-    unavail: /НА ДАНИЙ ЧАС ТАКИЙ ВИД ПРОДУКТ|НЕ МОЖЛИВО ВИГОТОВЛЯТИ/i.test(allText),
-    bonus:   /БОНУС ДЛЯ МЕНЕДЖЕРА/i.test(allText),
-    sale:    /АКЦІЯ!!!|АКЦІЯ!!/i.test(allText),
+    unavail:    isUnavailStatus || isUnavailDesc,
+    bonus:      isBonusStatus,
+    sale:       isSaleStatus,
+    statusText: statusVal, // повний текст статусу для tooltip
   };
 }
 function isUnavailable(row){ return getRowStatus(row).unavail; }
@@ -1493,10 +1536,11 @@ function renderGrid(pr){
     const photos=allImgCols.map(c=>driveImgUrl(row[c])).filter(v=>v&&isImg(v));
     const src=photos[0]||'';
     const st = getRowStatus(row);
+    const tooltipText = st.statusText ? esc(st.statusText) : '';
     const statusBadges = [
       st.unavail ? '<div class="card-badge-item badge-unavail">⛔ Не виготовляється</div>' : '',
-      st.bonus   ? '<div class="card-badge-item badge-bonus">🎁 Бонус менеджеру</div>' : '',
-      st.sale    ? '<div class="card-badge-item badge-sale">🔥 Акція</div>' : '',
+      st.bonus   ? '<div class="card-badge-item badge-bonus">🎁 Бонус<span class="badge-tooltip">'+tooltipText+'</span></div>' : '',
+      st.sale    ? '<div class="card-badge-item badge-sale">🔥 Акція<span class="badge-tooltip">'+tooltipText+'</span></div>' : '',
     ].filter(Boolean).join('');
     const badgesHtml = statusBadges ? '<div class="card-badges">'+statusBadges+'</div>' : '';
     const cardClasses = ['card', st.unavail?'has-unavail':'', st.bonus?'has-bonus':'', st.sale?'has-sale':''].filter(Boolean).join(' ');
@@ -1570,8 +1614,16 @@ function openMo(row){
   const cmpBtnHtml = `<button class="m-cmp-btn${isInCmp2?' active':''}" id="m-mo-cmp-btn" onclick="toggleMoCmp()">
     ${isInCmp2?'✓ У порівнянні':'⚖ Порівняти'}
   </button>`;
+  // Статус блок в шапці модалки
+  const stMoHdr = getRowStatus(row);
+  const statusItems = [];
+  if(stMoHdr.unavail) statusItems.push('<div class="m-status-item unavail">⛔ <span>Не виготовляється'+(stMoHdr.statusText&&!/не.виготовля/i.test(stMoHdr.statusText)?': '+esc(stMoHdr.statusText):'')+'</span></div>');
+  if(stMoHdr.bonus)   statusItems.push('<div class="m-status-item bonus">🎁 <span><b>Бонус для менеджера</b>'+(stMoHdr.statusText?'<br><span style="font-weight:400;font-size:.7rem">'+esc(stMoHdr.statusText)+'</span>':'')+'</span></div>');
+  if(stMoHdr.sale)    statusItems.push('<div class="m-status-item sale">🔥 <span><b>Акція</b>'+(stMoHdr.statusText?'<br><span style="font-weight:400;font-size:.7rem">'+esc(stMoHdr.statusText)+'</span>':'')+'</span></div>');
+  const statusBlock = statusItems.length ? '<div class="m-status-block">'+statusItems.join('')+'</div>' : '';
+
   document.getElementById('m-hdr').innerHTML=
-    `<div class="m-hdr-left">${cat}<div class="m-title">${esc(row[nameCol]??'—')}</div>${massBadge?'<div style="margin-top:.3rem">'+massBadge+'</div>':''}</div>
+    `<div class="m-hdr-left">${cat}<div class="m-title">${esc(row[nameCol]??'—')}</div>${massBadge?'<div style="margin-top:.3rem">'+massBadge+'</div>':''}${statusBlock}</div>
      <div class="m-hdr-right">${cmpBtnHtml}${copyKdBtn}<button class="mcl" onclick="closeMo()">×</button></div>`;
   // Зберігаємо поточний рядок для кнопки порівняння
   document.getElementById('mo')._row = row;
@@ -1674,10 +1726,10 @@ function openMo(row){
          </a>`
       : '';
 
-    // Перевірка недоступності
+    // Overlay "не виготовляється" на фото
     const unavailRow = isUnavailable(row);
     const unavailMo = unavailRow
-      ? `<div class="m-unavail"><div class="m-unavail-lbl">⛔ Даний продукт<br>не можливо виготовити<br>на даний час</div></div>`
+      ? '<div class="m-unavail"><div class="m-unavail-lbl">⛔ Не виготовляється</div></div>'
       : '';
 
     photosHtml=`<div class="m-photos">
@@ -1695,6 +1747,7 @@ function openMo(row){
     if(/загальн.*вид|вид.*загальн/i.test(k)) return; // є окремим блоком
     if(!k||k.trim()==='') return; // порожній ключ
     if(/^№$/.test(k.trim())) return; // порядковий номер — зайвий
+    if(/^статус$/i.test(k.trim())) return; // статус відображається в шапці
     const v=row[k];
     if(!v||String(v).trim()==='') return; // пропускаємо порожні
     const isLong = String(v).length > 55 || (isUrl(v) && String(v).length > 30);
