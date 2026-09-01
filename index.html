@@ -741,17 +741,17 @@ mark{
 .card-badge-item:hover .badge-tooltip{ display:block }
 
 .badge-unavail { background:rgba(220,38,38,.95);pointer-events:none }
-.badge-archive { background:rgba(100,116,139,.95);pointer-events:none }
+.badge-archive { background:rgba(220,38,38,.95);pointer-events:none }
 .badge-bonus   { background:rgba(202,138,4,.95);cursor:help }
 .badge-sale    { background:rgba(22,163,74,.95);cursor:help }
 
 /* Рамка картки */
 .card.has-unavail { border-color:rgba(220,38,38,.5) }
-.card.has-archive { border-color:rgba(100,116,139,.5) }
+.card.has-archive { border-color:rgba(220,38,38,.5) }
 .card.has-bonus   { border-color:rgba(202,138,4,.5) }
 .card.has-sale    { border-color:rgba(22,163,74,.5) }
 .card.has-unavail:hover { box-shadow:0 0 0 1px rgba(220,38,38,.7),0 8px 24px rgba(220,38,38,.12) }
-.card.has-archive:hover { box-shadow:0 0 0 1px rgba(100,116,139,.7),0 8px 24px rgba(100,116,139,.12) }
+.card.has-archive:hover { box-shadow:0 0 0 1px rgba(220,38,38,.7),0 8px 24px rgba(220,38,38,.12) }
 .card.has-bonus:hover   { box-shadow:0 0 0 1px rgba(202,138,4,.7),0 8px 24px rgba(202,138,4,.12) }
 .card.has-sale:hover    { box-shadow:0 0 0 1px rgba(22,163,74,.7),0 8px 24px rgba(22,163,74,.12) }
 
@@ -795,11 +795,11 @@ mark{
   border:2px solid transparent;transition:all .15s;white-space:nowrap;
 }
 .status-chip.unavail{ background:rgba(220,38,38,.1);color:#dc2626;border-color:rgba(220,38,38,.2) }
-.status-chip.archive{ background:rgba(100,116,139,.1);color:#475569;border-color:rgba(100,116,139,.2) }
+.status-chip.archive{ background:rgba(220,38,38,.1);color:#dc2626;border-color:rgba(220,38,38,.2) }
 .status-chip.bonus  { background:rgba(202,138,4,.1);color:#b45309;border-color:rgba(202,138,4,.2) }
 .status-chip.sale   { background:rgba(22,163,74,.1);color:#16a34a;border-color:rgba(22,163,74,.2) }
 .status-chip.unavail.on{ background:#dc2626;color:#fff;border-color:#dc2626 }
-.status-chip.archive.on{ background:#64748b;color:#fff;border-color:#64748b }
+.status-chip.archive.on{ background:#dc2626;color:#fff;border-color:#dc2626 }
 .status-chip.bonus.on  { background:#ca8a04;color:#fff;border-color:#ca8a04 }
 .status-chip.sale.on   { background:#16a34a;color:#fff;border-color:#16a34a }
 
@@ -834,7 +834,7 @@ mark{
 }
 .m-status-item:first-child{border-top:none}
 .m-status-item.unavail{background:rgba(220,38,38,.06);color:#dc2626}
-.m-status-item.archive{background:rgba(100,116,139,.06);color:#475569;border:1px solid rgba(100,116,139,.2)}
+.m-status-item.archive{background:rgba(220,38,38,.06);color:#dc2626;border:1px solid rgba(220,38,38,.2)}
 .m-status-item.bonus  {background:rgba(202,138,4,.06);color:#b45309}
 .m-status-item.sale   {background:rgba(22,163,74,.06);color:#16a34a}
 
@@ -1805,7 +1805,7 @@ function openMo(row){
     const unavailMo = stOverlay.unavail
       ? '<div class="m-unavail"><div class="m-unavail-lbl">⛔ Не виготовляється</div></div>'
       : stOverlay.archive
-        ? '<div class="m-unavail" style="background:rgba(100,116,139,.6)"><div class="m-unavail-lbl">🗄 Архів</div></div>'
+        ? '<div class="m-unavail"><div class="m-unavail-lbl">🗄 Архів</div></div>'
         : '';
 
     photosHtml=`<div class="m-photos">
