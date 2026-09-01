@@ -799,6 +799,39 @@ mark{
 .status-chip.sale.on   { background:#16a34a;color:#fff;border-color:#16a34a }
 
 
+
+/* ── STATUS BLOCK COLLAPSIBLE ── */
+.m-status-block{
+  margin-top:.4rem;
+  border:1px solid var(--border);border-radius:8px;overflow:hidden;
+}
+.m-status-block-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.3rem .6rem;background:var(--surface2);
+  cursor:pointer;user-select:none;
+  font-size:.65rem;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.06em;
+}
+.m-status-block-header:hover{background:var(--surface3)}
+.m-status-block-arr{
+  transition:transform .2s;font-size:.7rem;color:var(--text3);
+}
+.m-status-block.collapsed .m-status-block-arr{transform:rotate(-90deg)}
+.m-status-block-body{
+  display:flex;flex-direction:column;gap:0;
+}
+.m-status-block.collapsed .m-status-block-body{display:none}
+.m-status-item{
+  display:flex;align-items:flex-start;gap:.4rem;
+  padding:.4rem .6rem;
+  font-size:.75rem;font-weight:600;line-height:1.4;
+  border-top:1px solid var(--border);
+}
+.m-status-item:first-child{border-top:none}
+.m-status-item.unavail{background:rgba(220,38,38,.06);color:#dc2626}
+.m-status-item.bonus  {background:rgba(202,138,4,.06);color:#b45309}
+.m-status-item.sale   {background:rgba(22,163,74,.06);color:#16a34a}
+
 /* ── MASS BADGE ── */
 .m-mass-badge{
   display:inline-flex;align-items:center;gap:.25rem;
@@ -1272,23 +1305,49 @@ function getRowStatus(row){
   const statusCol = getStatusCol();
   const statusVal = statusCol ? String(row[statusCol]||'').trim() : '';
 
-  // Також перевіряємо старий спосіб (з тексту опису) як fallback
+  // Fallback на опис
   const descCol = headers.find(h=>/опис|характеристик|переваги/i.test(h));
   const descText = descCol ? String(row[descCol]||'') : '';
-
-  // Визначаємо тип статусу
-  const isUnavailStatus = /не.виготовля|не.виробля|знятий|зупинено/i.test(statusVal);
-  const isBonusStatus   = /бонус/i.test(statusVal);
-  const isSaleStatus    = /акці/i.test(statusVal);
-
-  // Fallback на опис
   const isUnavailDesc = /НА ДАНИЙ ЧАС ТАКИЙ ВИД ПРОДУКТ|НЕ МОЖЛИВО ВИГОТОВЛЯТИ/i.test(descText);
 
+  // Джерело тексту: спочатку колонка Статус, потім опис
+  const sourceText = statusVal || ((/АКЦІ|БОНУС|НЕ МОЖЛИВО/i.test(descText)) ? descText.slice(0,300) : '');
+
+  // Розділяємо по ключових словах — шукаємо де починається кожна частина
+  // Формат: "Акція для клієнта - 10% знижки на 1шт Бонус менеджеру - 5 000 грн"
+  let bonusText = '';
+  let saleText  = '';
+
+  // Шукаємо позиції ключових слів
+  const bonusIdx = sourceText.search(/бонус/i);
+  const saleIdx  = sourceText.search(/акці/i);
+
+  if(bonusIdx >= 0 && saleIdx >= 0){
+    // Обидва є — ділимо по тому що йде першим
+    if(saleIdx < bonusIdx){
+      saleText  = sourceText.slice(saleIdx, bonusIdx).trim();
+      bonusText = sourceText.slice(bonusIdx).trim();
+    } else {
+      bonusText = sourceText.slice(bonusIdx, saleIdx).trim();
+      saleText  = sourceText.slice(saleIdx).trim();
+    }
+  } else if(bonusIdx >= 0){
+    bonusText = sourceText.slice(bonusIdx).trim();
+  } else if(saleIdx >= 0){
+    saleText  = sourceText.slice(saleIdx).trim();
+  }
+
+  // Прибираємо зайві знаки оклику на початку
+  bonusText = bonusText.replace(/^[!]+\s*/,'').trim();
+  saleText  = saleText.replace(/^[!]+\s*/,'').trim();
+
   return {
-    unavail:    isUnavailStatus || isUnavailDesc,
-    bonus:      isBonusStatus,
-    sale:       isSaleStatus,
-    statusText: statusVal, // повний текст статусу для tooltip
+    unavail:    /не.виготовля|не.виробля|знятий|зупинено/i.test(statusVal) || isUnavailDesc,
+    bonus:      /бонус/i.test(statusVal),
+    sale:       /акці/i.test(statusVal),
+    statusText: statusVal,
+    bonusText:  bonusText,  // тільки частина про бонус
+    saleText:   saleText,   // тільки частина про акцію
   };
 }
 function isUnavailable(row){ return getRowStatus(row).unavail; }
@@ -1536,11 +1595,10 @@ function renderGrid(pr){
     const photos=allImgCols.map(c=>driveImgUrl(row[c])).filter(v=>v&&isImg(v));
     const src=photos[0]||'';
     const st = getRowStatus(row);
-    const tooltipText = st.statusText ? esc(st.statusText) : '';
     const statusBadges = [
       st.unavail ? '<div class="card-badge-item badge-unavail">⛔ Не виготовляється</div>' : '',
-      st.bonus   ? '<div class="card-badge-item badge-bonus">🎁 Бонус<span class="badge-tooltip">'+tooltipText+'</span></div>' : '',
-      st.sale    ? '<div class="card-badge-item badge-sale">🔥 Акція<span class="badge-tooltip">'+tooltipText+'</span></div>' : '',
+      st.bonus   ? '<div class="card-badge-item badge-bonus">🎁 Бонус<span class="badge-tooltip">'+(st.bonusText?esc(st.bonusText):esc(st.statusText))+'</span></div>' : '',
+      st.sale    ? '<div class="card-badge-item badge-sale">🔥 Акція<span class="badge-tooltip">'+(st.saleText?esc(st.saleText):esc(st.statusText))+'</span></div>' : '',
     ].filter(Boolean).join('');
     const badgesHtml = statusBadges ? '<div class="card-badges">'+statusBadges+'</div>' : '';
     const cardClasses = ['card', st.unavail?'has-unavail':'', st.bonus?'has-bonus':'', st.sale?'has-sale':''].filter(Boolean).join(' ');
@@ -1617,10 +1675,24 @@ function openMo(row){
   // Статус блок в шапці модалки
   const stMoHdr = getRowStatus(row);
   const statusItems = [];
-  if(stMoHdr.unavail) statusItems.push('<div class="m-status-item unavail">⛔ <span>Не виготовляється'+(stMoHdr.statusText&&!/не.виготовля/i.test(stMoHdr.statusText)?': '+esc(stMoHdr.statusText):'')+'</span></div>');
-  if(stMoHdr.bonus)   statusItems.push('<div class="m-status-item bonus">🎁 <span><b>Бонус для менеджера</b>'+(stMoHdr.statusText?'<br><span style="font-weight:400;font-size:.7rem">'+esc(stMoHdr.statusText)+'</span>':'')+'</span></div>');
-  if(stMoHdr.sale)    statusItems.push('<div class="m-status-item sale">🔥 <span><b>Акція</b>'+(stMoHdr.statusText?'<br><span style="font-weight:400;font-size:.7rem">'+esc(stMoHdr.statusText)+'</span>':'')+'</span></div>');
-  const statusBlock = statusItems.length ? '<div class="m-status-block">'+statusItems.join('')+'</div>' : '';
+  if(stMoHdr.unavail) statusItems.push('<div class="m-status-item unavail">⛔ <span><b>Не виготовляється</b></span></div>');
+  if(stMoHdr.bonus){
+    const bt = stMoHdr.bonusText || stMoHdr.statusText;
+    statusItems.push('<div class="m-status-item bonus">🎁 <span><b>Бонус для менеджера</b>'+(bt?'<br><span style="font-weight:500;font-size:.72rem">'+esc(bt)+'</span>':'')+'</span></div>');
+  }
+  if(stMoHdr.sale){
+    const st2 = stMoHdr.saleText || stMoHdr.statusText;
+    statusItems.push('<div class="m-status-item sale">🔥 <span><b>Акція для клієнта</b>'+(st2?'<br><span style="font-weight:500;font-size:.72rem">'+esc(st2)+'</span>':'')+'</span></div>');
+  }
+  const statusBlock = statusItems.length
+    ? `<div class="m-status-block" id="m-status-block">
+        <div class="m-status-block-header" onclick="toggleStatusBlock()">
+          <span>📋 Спеціальні умови (${statusItems.length})</span>
+          <span class="m-status-block-arr">▼</span>
+        </div>
+        <div class="m-status-block-body">${statusItems.join('')}</div>
+      </div>`
+    : '';
 
   document.getElementById('m-hdr').innerHTML=
     `<div class="m-hdr-left">${cat}<div class="m-title">${esc(row[nameCol]??'—')}</div>${massBadge?'<div style="margin-top:.3rem">'+massBadge+'</div>':''}${statusBlock}</div>
@@ -2512,6 +2584,11 @@ function openCompare(){
   html += '</tbody></table>';
   document.getElementById('cmo-body').innerHTML = html;
   document.getElementById('cmo').classList.add('open');
+}
+
+function toggleStatusBlock(){
+  const el = document.getElementById('m-status-block');
+  if(el) el.classList.toggle('collapsed');
 }
 
 function toggleMoCmp(){
